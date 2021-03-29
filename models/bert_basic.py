@@ -1,14 +1,14 @@
 import torch.nn as nn
 import transformers
-from transformers import AutoModel, BertTokenizerFast
+from transformers import AutoModel,BertModel,  BertTokenizerFast
 
 class BERTBasic(nn.Module):
     def __init__(self, freeze_bert_params=True):
       super(BERTBasic, self).__init__()
-      self.bert = AutoModel.from_pretrained('bert-base-uncased')
+      self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
 
       if freeze_bert_params:
-      	for param in self.bert.parameters():
+      	for param in self.embeddings.parameters():
       		param.requires_grad=False
 
       self.dropout = nn.Dropout(0.1)
@@ -24,16 +24,16 @@ class BERTBasic(nn.Module):
       self.out4 = nn.Linear(256, 3)
       self.out5 = nn.Linear(256, 3)
 
-      # TODO : Values here should be for 2 classes below according to PS README, but train-data has 3 values in it
-      self.out6 = nn.Linear(512, 3)
-      self.out7 = nn.Linear(512, 3)
+      # [DONE] TODO : Values here should be for 2 classes below according to PS README, but train-data has 3 values in it
+      self.out6 = nn.Linear(512, 2)
+      self.out7 = nn.Linear(512, 2)
       
 
     #define the forward pass
     def forward(self, sent_id, mask):
       # Bert
-      _, cls_hs = self.bert(sent_id, attention_mask=mask)
-      
+      cls_hs = self.embeddings(sent_id, attention_mask=mask)[1]
+
       # Initial layers
       x = self.fc1(cls_hs)
       x = self.relu(x)
