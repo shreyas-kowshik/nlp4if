@@ -23,8 +23,6 @@ class BERTBasic(nn.Module):
       self.out3 = nn.Linear(256, 3)
       self.out4 = nn.Linear(256, 3)
       self.out5 = nn.Linear(256, 3)
-
-      # [DONE] TODO : Values here should be for 2 classes below according to PS README, but train-data has 3 values in it
       self.out6 = nn.Linear(512, 2)
       self.out7 = nn.Linear(512, 2)
       

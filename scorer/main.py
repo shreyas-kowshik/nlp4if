@@ -19,6 +19,12 @@ logging.basicConfig(format='%(levelname)s : %(message)s', level=logging.INFO)
 
 MAIN_THRESHOLDS = [1, 3, 5, 10, 20, 30]
 
+"""
+TLDR for function :
+
+If any answer is 'nan' in ground truth, evaluation for that question is not done
+For instance, if q1 is 'no' and all q2-5 are 'nan' in ground truth, then evaluation only for q1 is done
+"""
 def _read_gold_and_pred(gold_fpath, pred_fpath):
     """
     Read gold and predicted data.
@@ -42,12 +48,18 @@ def _read_gold_and_pred(gold_fpath, pred_fpath):
             # append \t in the beginning for easy indexing of questions (1-based instead of 0-based for Q1 to Q7)
             line = "\t" + str(line)
             # print(line)
+
+            # This will contain [id, tweet, q1_ans, q2_ans, ..., q7_ans]
             questions = line.split("\t")
             # print(questions)
+
             for j in range(7):
-                if questions[j+1] != "nan":
+                if questions[j+1] != "nan": 
                     truths[j+1].append(questions[j+1])
                     truths_ids[j+1][i] = i
+
+    # truths : contains the answers for each label in an array, provided the answer is not 'nan'
+    # truth_ids : contains the sentence id for each label in a dict, provided the answer is not 'nan'
 
     logging.info('Reading predicted ranking order from file {}'.format(pred_fpath))
     
@@ -63,7 +75,7 @@ def _read_gold_and_pred(gold_fpath, pred_fpath):
             questions = line.split("\t")
 
             for j in range(7):
-                if i in truths_ids[j+1]:
+                if i in truths_ids[j+1]: # By default checks in keys of truth_ids
                     submitted[j+1].append(questions[j+1])
 
     for i in range(7):

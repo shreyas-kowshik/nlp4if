@@ -16,6 +16,16 @@ from models.bert_basic import *
 # Utils Imports #
 from utils.preprocess import *
 from utils.train_utils import *
+import wandb
+
+# Add initial values here #
+wandb.init(name='run1',project='nlp_runs', entity='nlp4if')
+wandb_cfg = wandb.config
+wandb_cfg.learning_rate = learning_rate
+wandb_cfg.batch_size = BATCH_SIZE
+wandb_cfg.epochs = EPOCHS
+wandb_cfg.loss_type = loss_type
+###########################
 
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
@@ -34,13 +44,17 @@ DEV_FILE=DATA_PATH_DEV+"covid19_disinfo_binary_english_dev_input.tsv"
 sentences, labels, train_les = process_data(TRAIN_FILE)
 sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
 
-idx = [i for i in range(len(sentences))]
-np.random.shuffle(idx)
-train_idx, val_idx = train_test_split(idx, test_size=0.2, random_state=42)
-train_x = sentences[train_idx]
-val_x = sentences[val_idx]
-train_y = labels[train_idx, :]
-val_y = labels[val_idx, :]
+# idx = [i for i in range(len(sentences))]
+# np.random.shuffle(idx)
+# train_idx, val_idx = train_test_split(idx, test_size=0.2, random_state=42)
+# train_x = sentences[train_idx]
+# val_x = sentences[val_idx]
+# train_y = labels[train_idx, :]
+# val_y = labels[val_idx, :]
+train_x = sentences
+train_y = labels
+val_x = sentences_dev
+val_y = labels_dev
 ########################
 
 ### Tokenize Data ###

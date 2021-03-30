@@ -4,6 +4,7 @@ from tqdm import tqdm
 from transformers import AdamW, get_linear_schedule_with_warmup
 from utils.losses import *
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix, precision_recall_fscore_support
+import wandb
 
 # Evaluate
 def predict_labels(nmodel, test_dataloader, device):
@@ -35,6 +36,7 @@ def scorer(y_true, y_pred):
     truths = {}
     truths_ids = {}
     preds = {}
+
     for i in range(7):
         truths[i] = []
         preds[i] = []
@@ -60,8 +62,11 @@ def scorer(y_true, y_pred):
         'p_score': [],
         'r_score': [],
     }
+
+    print("Evaluating...")
     all_classes = [0, 1]
     for i in range(7):
+        print("class-id : {}".format(i+1))
         acc, f1, p_score, r_score = scorer_indiv(truths[i], preds[i], all_classes)
         for metric in scores:
             scores[metric].append(eval(metric))        
@@ -156,7 +161,10 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             ypreds = nmodel(sent_id, mask)
             loss = loss_fn(ypreds, labels)
             if step%50==0:
+                loss_val = total_train_loss/(step+1.00)
                 print('Loss = '+str(total_train_loss/(step+1.00)))
+                # wandb.log({"loss":loss_val})
+
             total_train_loss += loss
             optimizer1.zero_grad()
             optimizer2.zero_grad()
@@ -167,7 +175,7 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             scheduler1.step()
             scheduler2.step()
 
-        print(f'Total Train Loss = {total_train_loss}')
+        print('Total Train Loss = {total_train_loss}')
         print('#############    Validation Set Stats')
         scores_mean, scores = evaluate(nmodel, val_dataloader, device)
         print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
