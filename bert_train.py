@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import random
+import copy
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -94,5 +95,6 @@ model = model.to(device)
 ### Train ###
 model = train_v2(model, train_dataloader, val_dataloader, device, EPOCHS, learning_rate)
 
-classwise_acc, total_acc = evaluate(model, dev_dataloader, device)
-print('Classwise accuracy: ', classwise_acc, '\nTotal accuracy: ', total_acc)
+scores_mean, scores = evaluate(model, dev_dataloader, device)
+print('###################\nDev Set result: ')
+print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
