@@ -15,7 +15,5 @@ wandb login
 Go over to the link in terminal and paste you API key. That should be it.
 
 ## TODO
-- WnB integration [SK]
 - Cross-validation
-- Write script for grid search [AS]
-- Convert config to argparse [AS]
+- Write script for grid search
