@@ -1,3 +1,5 @@
+tmp/
+tmp/*.tsv
 wandb/
 *.fuse*
 *.pyc

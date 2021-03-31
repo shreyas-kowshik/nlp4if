@@ -19,15 +19,6 @@ from utils.preprocess import *
 from utils.train_utils import *
 import wandb
 
-# Add initial values here #
-# wandb.init(name='run1',project='nlp_runs', entity='nlp4if')
-# wandb_cfg = wandb.config
-# wandb_cfg.learning_rate = learning_rate
-# wandb_cfg.batch_size = BATCH_SIZE
-# wandb_cfg.epochs = EPOCHS
-# wandb_cfg.loss_type = loss_type
-###########################
-
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 torch.manual_seed(RANDOM_SEED)
@@ -56,8 +47,20 @@ parser.add_argument("-device", "--device", type=str, default="cuda",
                     help="Device")
 parser.add_argument("-loss", "--loss_type", type=str, default="classwise_sum",
                     help="Loss")
+parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
+                    help="Wandb Run Name")
 
 args = parser.parse_args()
+
+# Add initial values here #
+wandb.init(name=args.wandb_run, project='nlp_runs', entity='nlp4if')
+# wandb_cfg = wandb.config
+# wandb_cfg.learning_rate = learning_rate
+# wandb_cfg.batch_size = BATCH_SIZE
+# wandb_cfg.epochs = EPOCHS
+# wandb_cfg.loss_type = loss_type
+wandb.config.update(args)
+###########################
 
 ### Base Parameters ###
 device = torch.device(args.device)
@@ -132,6 +135,8 @@ if args.model_to_use=="bert_not_train_emb":
     model = BERTBasic(freeze_bert_params=True)
 elif args.model_to_use=="bert_train_emb":
     model = BERTBasic(freeze_bert_params=False)
+
+wandb.watch(model, log="all")
     
 model = model.to(device)
 #########################
@@ -148,3 +153,22 @@ elif args.model_to_use=="bert_train_emb":
 print("---Final Dev Stats---")
 scores = evaluate_model(model, val_dataloader, args.device)
 display_metrics(scores)
+
+# Save summary wandb
+wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
+wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
+wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
+wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
+wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
+wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
+wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
+wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
+wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
+wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
+wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
+
+# Save model to wandb
+# wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
+# model.save(os.path.join(wandb.run.dir, "final_model.pt"))
+# wandb.save('checkpoints_final_model.pt')
+torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "final_model.pt"))
