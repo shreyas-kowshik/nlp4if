@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import copy
+import argparse
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -10,7 +11,7 @@ from sklearn.metrics import classification_report
 import transformers
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 # Config Import #
-from config.config import *
+# from config.config import *
 # Model Imports #
 from models.bert_basic import *
 # Utils Imports #
@@ -33,11 +34,34 @@ torch.manual_seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 torch.cuda.manual_seed_all(RANDOM_SEED)
 
+#### Parse Arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v1/v1/",
+                    help="Expects a path to training folder")
+parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v2/v2/",
+                    help="Expects a path to dev folder")
+parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
+                    help="Maximum sequence length")
+parser.add_argument("-bs", "--batch_size", type=int, default=8,
+                    help="Batch Size")
+parser.add_argument("-e", "--epochs", type=int, required=True,
+                    help="Epochs")
+parser.add_argument("-lr", "--learning_rate", type=float, default=1e-5,
+                    help="Learning Rate of non-embedding params")
+parser.add_argument("-lr_emb", "--learning_rate_embeddings", type=float, default=2e-5,
+                    help="Learning Rate of embedding params")
+parser.add_argument("-device", "--device", type=str, default="cuda",
+                    help="Device")
+parser.add_argument("-loss", "--loss_type", type=str, default="classwise_sum",
+                    help="Loss")
+
+args = parser.parse_args()
+
 ### Base Parameters ###
-device = torch.device(device_name)
+device = torch.device(args.device)
 print(device)
-TRAIN_FILE=DATA_PATH+"covid19_disinfo_binary_english_train.tsv"
-DEV_FILE=DATA_PATH_DEV+"covid19_disinfo_binary_english_dev_input.tsv"
+TRAIN_FILE=args.data_train_path+"covid19_disinfo_binary_english_train.tsv"
+DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 #######################
 
 ### Data Preparation ###
@@ -107,7 +131,7 @@ model = model.to(device)
 #########################
 
 ### Train ###
-model = train_v2(model, train_dataloader, val_dataloader, train_les, train_les_dev, device, EPOCHS, learning_rate)
+model = train_v2(model, train_dataloader, val_dataloader, train_les, train_les_dev, args.device, args.epochs, args.learning_rate)
 
 ### Print Stats ###
 print("---Final Dev Stats---")
