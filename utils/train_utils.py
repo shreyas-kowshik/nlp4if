@@ -5,6 +5,8 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from utils.losses import *
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix, precision_recall_fscore_support
 import wandb
+import os
+from scorer.main import *
 
 # Evaluate
 def predict_labels(nmodel, test_dataloader, device):
@@ -25,36 +27,117 @@ def predict_labels(nmodel, test_dataloader, device):
     return y_preds, y_test
 
 
-def scorer_indiv(truths, submitted, all_classes):
-    acc = accuracy_score(truths, submitted)
-    f1 = f1_score(truths, submitted, labels=all_classes, average='weighted')
-    p_score = precision_score(truths, submitted, labels=all_classes, average='weighted')
-    r_score = recall_score(truths, submitted, labels=all_classes, average='weighted')
-    return acc, f1, p_score, r_score
+# def scorer_indiv(truths, submitted, all_classes):
+#     print(np.unique(truths))
+#     print(np.unique(submitted))
+#     print("------------------")
+#     acc = accuracy_score(truths, submitted)
+#     f1 = f1_score(truths, submitted, labels=all_classes, average='weighted')
+#     p_score = precision_score(truths, submitted, labels=all_classes, average='weighted')
+#     r_score = recall_score(truths, submitted, labels=all_classes, average='weighted')
+#     return acc, f1, p_score, r_score
 
-def scorer(y_true, y_pred):
-    truths = {}
-    truths_ids = {}
-    preds = {}
+# def scorer(y_true, y_pred, les):
+#     """
+#     les : label_encoders
+#     """
+#     truths = {}
+#     truths_ids = {}
+#     preds = {}
 
-    for i in range(7):
-        truths[i] = []
-        preds[i] = []
-        truths_ids[i] = []
+#     for i in range(7):
+#         truths[i] = []
+#         preds[i] = []
+#         truths_ids[i] = []
 
-    for i, _label in enumerate(y_true):
-        for j in range(7):
-            if _label[j]!=2 :
-                truths[j].append(_label[j])
-                truths_ids[j].append(i)
+#     for i in range(7):
+#         maps = les[i].transform(les[i].classes_)
+#         encode_dict = {}
+#         for j in range(len(les[i].classes_)):
+#             encode_dict[les[i].classes_[j]] = maps[j]
+#         label_encode_dict.append(encode_dict)
 
-    for i, _label in enumerate(y_pred):
-        for j in range(7):
-            if i in truths_ids[j]:
-                preds[j].append(_label[j])
+#     for i, _label in enumerate(y_true):
+#         for j in range(7):
+#             if 'nan' in les[j].classes_:
+#                 if _label[j] == label_encode_dict[j]['nan']: # Addressing 'nan' issues
+#                     continue
+#                 else:
+#                     truths[j].append(_label[j])
+#                     truths_ids[j].append(i)
+#             else:
+#                 truths[j].append(_label[j])
+#                 truths_ids[j].append(i)
+
+#     for i, _label in enumerate(y_pred):
+#         for j in range(7):
+#             if i in truths_ids[j]:
+#                 preds[j].append(_label[j])
     
+#     for i in range(7):
+#         assert(len(truths[i])==len(preds[i]))
+
+#     scores = {
+#         'acc': [],
+#         'f1': [],
+#         'p_score': [],
+#         'r_score': [],
+#     }
+
+#     print("Evaluating...")
+#     all_classes = [0, 1]
+#     for i in range(7):
+#         print("class-id : {}".format(i+1))
+#         acc, f1, p_score, r_score = scorer_indiv(truths[i], preds[i], all_classes)
+#         for metric in scores:
+#             scores[metric].append(eval(metric))        
+#     scores_mean = copy.deepcopy(scores)
+#     for i in scores_mean:
+#         scores_mean[i]=np.mean(scores_mean[i])
+
+#     return scores_mean, scores
+
+# def evaluate(nmodel, test_dataloader, test_les, device):
+#     y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
+#     scores_mean, scores = scorer(y_preds, y_test, test_les)
+#     return scores_mean, scores
+
+def inverse_transform(y):
+    y = y.astype(str)
+    # Convert encodings to hardcoded values
     for i in range(7):
-        assert(len(truths[i])==len(preds[i]))
+        if i in [1, 2, 3, 4]:
+            # Include nan
+            col = np.copy(y[:,i])
+            col[np.where(col == '0')] = 'no'
+            col[np.where(col == '1')] = 'yes'
+            col[np.where(col == '2')] = 'nan'
+            y[:, i] = np.copy(col)
+        else:
+            col = np.copy(y[:,i])
+            col[np.where(col == '0')] = 'no'
+            col[np.where(col == '1')] = 'yes'
+            y[:, i] = np.copy(col)
+
+    return y
+
+
+def generate_out_files(nmodel, test_dataloader, device):
+    y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
+    
+    y_preds = inverse_transform(y_preds)
+    y_test = inverse_transform(y_test)
+
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    np.savetxt("tmp/preds_tem.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
+
+def evaluate_model(nmodel, test_dataloader, device):
+    generate_out_files(nmodel, test_dataloader, device)
+
+    truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
 
     scores = {
         'acc': [],
@@ -62,24 +145,27 @@ def scorer(y_true, y_pred):
         'p_score': [],
         'r_score': [],
     }
-
-    print("Evaluating...")
-    all_classes = [0, 1]
+    all_classes = ["yes", "no"]
     for i in range(7):
-        print("class-id : {}".format(i+1))
-        acc, f1, p_score, r_score = scorer_indiv(truths[i], preds[i], all_classes)
+        acc, f1, p_score, r_score = evaluate(truths[i+1], submitted[i+1], all_classes)
         for metric in scores:
-            scores[metric].append(eval(metric))        
-    scores_mean = copy.deepcopy(scores)
-    for i in scores_mean:
-        scores_mean[i]=np.mean(scores_mean[i])
+            scores[metric].append(eval(metric))
 
-    return scores_mean, scores
+    return scores
 
-def evaluate(nmodel, test_dataloader, device):
-    y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
-    scores_mean, scores = scorer(y_preds, y_test)
-    return scores_mean, scores
+def display_metrics(scores):
+    print("--------------")
+    print("---Mean Scores---")
+    print('ACCURACY:', np.mean(scores['acc']))
+    print('F1:', np.mean(scores['f1']))
+    print('PRECISION:', np.mean(scores['p_score']))
+    print('RECALL:', np.mean(scores['r_score']))
+
+    print("\n---Classwise---")
+    print('ACCURACY:', scores['acc'])
+    print('F1:', scores['f1'])
+    print('PRECISION:', scores['p_score'])
+    print('RECALL:', scores['r_score'])
 
 '''    
 # scorer
@@ -124,7 +210,7 @@ def train(model, dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_t
             print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
     return model
 
-def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum"):
+def train_v2(nmodel, training_dataloader, val_dataloader, train_les, val_les, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum"):
     total_steps = len(training_dataloader) * epochs
     bert_params = nmodel.embeddings
     bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
@@ -177,7 +263,7 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
 
         print('Total Train Loss = {total_train_loss}')
         print('#############    Validation Set Stats')
-        scores_mean, scores = evaluate(nmodel, val_dataloader, device)
-        print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
+        scores = evaluate_model(nmodel, val_dataloader, device)
+        display_metrics(scores)
 
     return nmodel
