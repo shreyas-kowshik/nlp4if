@@ -19,12 +19,12 @@ from utils.train_utils import *
 import wandb
 
 # Add initial values here #
-wandb.init(name='run1',project='nlp_runs', entity='nlp4if')
-wandb_cfg = wandb.config
-wandb_cfg.learning_rate = learning_rate
-wandb_cfg.batch_size = BATCH_SIZE
-wandb_cfg.epochs = EPOCHS
-wandb_cfg.loss_type = loss_type
+# wandb.init(name='run1',project='nlp_runs', entity='nlp4if')
+# wandb_cfg = wandb.config
+# wandb_cfg.learning_rate = learning_rate
+# wandb_cfg.batch_size = BATCH_SIZE
+# wandb_cfg.epochs = EPOCHS
+# wandb_cfg.loss_type = loss_type
 ###########################
 
 RANDOM_SEED = 42
@@ -107,8 +107,9 @@ model = model.to(device)
 #########################
 
 ### Train ###
-model = train_v2(model, train_dataloader, val_dataloader, device, EPOCHS, learning_rate)
+model = train_v2(model, train_dataloader, val_dataloader, train_les, train_les_dev, device, EPOCHS, learning_rate)
 
-scores_mean, scores = evaluate(model, dev_dataloader, device)
-print('###################\nDev Set result: ')
-print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
+### Print Stats ###
+print("---Final Dev Stats---")
+scores = evaluate_model(model, val_dataloader, device)
+display_metrics(scores)
