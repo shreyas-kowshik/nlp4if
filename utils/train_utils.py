@@ -193,6 +193,8 @@ def train(model, dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_t
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
 
+    best_model = copy.deepcopy(model)
+    best_prec = 0
     for epoch in range(num_epochs):
         for i,batch in enumerate(dataloader):
             batch = [r.to(device) for r in batch]
@@ -204,13 +206,18 @@ def train(model, dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_t
             loss_val.backward()
             optimizer.step()
             
-        print("Epoch : {}  Loss : {}".format(epoch, loss_val.cpu()))
-        if(epoch%10==9):
-            scores, scores_mean = evaluate(model, val_dataloader, device)
-            print('Mean scores: ', scores_mean, '\nClass wise scores: ', scores)
-    return model
+        print('Total Train Loss = {total_train_loss}')
+        print('#############    Validation Set Stats')
+        scores = evaluate_model(model, val_dataloader, device)
+        display_metrics(scores)
 
-def train_v2(nmodel, training_dataloader, val_dataloader, train_les, val_les, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum"):
+        if np.mean(scores['p_score']) > best_prec:
+            best_model = copy.deepcopy(model)
+            best_prec = np.mean(scores['p_score'])
+
+    return best_model
+
+def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum"):
     total_steps = len(training_dataloader) * epochs
     bert_params = nmodel.embeddings
     bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
@@ -238,6 +245,8 @@ def train_v2(nmodel, training_dataloader, val_dataloader, train_les, val_les, de
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
 
+    best_model = copy.deepcopy(nmodel)
+    best_prec = 0
     for epoch_i in tqdm(range(0, epochs)):
         total_train_loss = 0
         nmodel.train()
@@ -246,10 +255,10 @@ def train_v2(nmodel, training_dataloader, val_dataloader, train_les, val_les, de
             sent_id, mask, labels = batch
             ypreds = nmodel(sent_id, mask)
             loss = loss_fn(ypreds, labels)
-            if step%50==0:
-                loss_val = total_train_loss/(step+1.00)
-                print('Loss = '+str(total_train_loss/(step+1.00)))
-                # wandb.log({"loss":loss_val})
+            # if step%50==0:
+            #     loss_val = total_train_loss/(step+1.00)
+            #     print('Loss = '+loss_val)
+            #     # wandb.log({"loss":loss_val})
 
             total_train_loss += loss
             optimizer1.zero_grad()
@@ -261,9 +270,13 @@ def train_v2(nmodel, training_dataloader, val_dataloader, train_les, val_les, de
             scheduler1.step()
             scheduler2.step()
 
-        print('Total Train Loss = {total_train_loss}')
+        print('Total Train Loss =', total_train_loss)
         print('#############    Validation Set Stats')
         scores = evaluate_model(nmodel, val_dataloader, device)
         display_metrics(scores)
 
-    return nmodel
+        if np.mean(scores['p_score']) > best_prec:
+            best_model = copy.deepcopy(nmodel)
+            best_prec = np.mean(scores['p_score'])
+    
+    return best_model

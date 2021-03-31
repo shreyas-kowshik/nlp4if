@@ -40,6 +40,8 @@ parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english
                     help="Expects a path to training folder")
 parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v2/v2/",
                     help="Expects a path to dev folder")
+parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_emb",
+                    help="Which model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
 parser.add_argument("-bs", "--batch_size", type=int, default=8,
@@ -82,9 +84,9 @@ val_y = labels_dev
 ########################
 
 ### Tokenize Data ###
-tokens_train = bert_tokenize(train_x, MAX_SEQ_LEN)
-tokens_val = bert_tokenize(val_x, MAX_SEQ_LEN)
-tokens_dev = bert_tokenize(sentences_dev, MAX_SEQ_LEN)
+tokens_train = bert_tokenize(train_x, args.max_seq_len)
+tokens_val = bert_tokenize(val_x, args.max_seq_len)
+tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len)
 
 #####################
 
@@ -107,33 +109,42 @@ train_data = TensorDataset(train_seq, train_mask, train_y)
 # sampler for sampling the data during training
 train_sampler = RandomSampler(train_data)
 # dataLoader for train set
-train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=BATCH_SIZE)
+train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.batch_size)
 
 # wrap tensors
 val_data = TensorDataset(val_seq, val_mask, val_y)
 # sampler for sampling the data during training
 val_sampler = SequentialSampler(val_data)
 # dataLoader for validation set
-val_dataloader = DataLoader(val_data, sampler = val_sampler, batch_size=BATCH_SIZE)
+val_dataloader = DataLoader(val_data, sampler = val_sampler, batch_size=args.batch_size)
 
 # dev tensors
 dev_data = TensorDataset(dev_seq, dev_mask, dev_y)
 # sampler for sampling the data during training
 dev_sampler = SequentialSampler(dev_data)
 # dataLoader for validation set
-dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=BATCH_SIZE)
+dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=args.batch_size)
 
 ################################
 
 ### Model Preparation ###
-model = BERTBasic(freeze_bert_params=False)
+if args.model_to_use=="bert_not_train_emb":
+    model = BERTBasic(freeze_bert_params=True)
+elif args.model_to_use=="bert_train_emb":
+    model = BERTBasic(freeze_bert_params=False)
+    
 model = model.to(device)
 #########################
 
 ### Train ###
-model = train_v2(model, train_dataloader, val_dataloader, train_les, train_les_dev, args.device, args.epochs, args.learning_rate)
+if args.model_to_use=="bert_not_train_emb":
+    model = train(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+                lr=args.learning_rate, loss_type=args.loss_type)
+elif args.model_to_use=="bert_train_emb":
+    model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+                lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
 ### Print Stats ###
 print("---Final Dev Stats---")
-scores = evaluate_model(model, val_dataloader, device)
+scores = evaluate_model(model, val_dataloader, args.device)
 display_metrics(scores)
