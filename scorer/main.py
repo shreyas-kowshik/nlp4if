@@ -19,13 +19,15 @@ logging.basicConfig(format='%(levelname)s : %(message)s', level=logging.INFO)
 
 MAIN_THRESHOLDS = [1, 3, 5, 10, 20, 30]
 
-"""
-TLDR for function :
 
-If any answer is 'nan' in ground truth, evaluation for that question is not done
-For instance, if q1 is 'no' and all q2-5 are 'nan' in ground truth, then evaluation only for q1 is done
-"""
-def _read_gold_and_pred(gold_fpath, pred_fpath):
+def read_gold_and_pred(gold_fpath, pred_fpath):
+    """
+    TLDR for function :
+
+    If any answer is 'nan' in ground truth, evaluation for that question is not done
+    For instance, if q1 is 'no' and all q2-5 are 'nan' in ground truth, then evaluation only for q1 is done
+    """
+
     """
     Read gold and predicted data.
     :param gold_fpath: the original annotated gold file, where the last 4th column contains the labels.
@@ -84,7 +86,6 @@ def _read_gold_and_pred(gold_fpath, pred_fpath):
             raise ValueError('The predictions do not match the lines from the gold file - missing or extra line for questions {}'.format(i+1))
 
     return truths, submitted
-
 
 def evaluate(truths, submitted, all_classes):
     acc = accuracy_score(truths, submitted)
