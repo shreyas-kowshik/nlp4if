@@ -27,11 +27,30 @@ def process_data(data_path):
 
     from sklearn import preprocessing
     les = []
+    print("---Preprocessing---")
     for i in range(labels.shape[1]):
-        le = preprocessing.LabelEncoder()
-        le.fit(labels[:, i])
-        labels[:, i] = le.transform(labels[:, i])
-        les.append(le)
+        # le = preprocessing.LabelEncoder()
+        # le.fit(labels[:, i])
+
+        # print("{} : {}".format(i, le.classes_))
+
+        # labels[:, i] = le.transform(labels[:, i])
+        # les.append(le)
+
+        # Hardcode encoding : 0:no,1:yes,2:nan
+        if i in [1, 2, 3, 4]:
+            # Include nan
+            col = np.copy(labels[:,i])
+            col[np.where(col == 'no')] = 0
+            col[np.where(col == 'yes')] = 1
+            col[np.where(col == 'nan')] = 2
+            labels[:, i] = np.copy(col).astype(np.int32)
+        else:
+            col = np.copy(labels[:,i])
+            col[np.where(col == 'no')] = 0
+            col[np.where(col == 'yes')] = 1
+            labels[:, i] = np.copy(col).astype(np.int32)
+
         
     return np.array(sentences), labels, les
 
