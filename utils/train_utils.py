@@ -212,14 +212,57 @@ def train(model, dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_t
             loss_val.backward()
             optimizer.step()
             
-        print('Total Train Loss = {total_train_loss}')
+        print('Total Train Loss =', total_train_loss)
         print('#############    Validation Set Stats')
-        scores = evaluate_model(model, val_dataloader, device)
+        train_scores = evaluate_model(nmodel, training_dataloader, device)
+        scores, val_preds, val_gt = evaluate_model(nmodel, val_dataloader, device, return_files=True)
         display_metrics(scores)
 
+        # Log scores on wandb
+        wandb.log({
+            # Mean Scores
+            'Training loss': total_train_loss,
+            'Training Mean F1-Score': np.mean(train_scores['f1']),
+            'Training Accuracy': np.mean(train_scores['acc']),
+            'Training Mean Precision': np.mean(train_scores['p_score']),
+            'Training Mean Recall': np.mean(train_scores['r_score']),
+
+            'Validation Mean F1-Score': np.mean(scores['f1']),
+            'Validation Accuracy': np.mean(scores['acc']),
+            'Validation Mean Precision': np.mean(scores['p_score']),
+            'Validation Mean Recall': np.mean(scores['r_score']),
+
+            # Classwise scores
+            # Train Set
+            'Training Q1 F1 Score':train_scores['f1'][0],
+            'Training Q2 F1 Score':train_scores['f1'][1],
+            'Training Q3 F1 Score':train_scores['f1'][2],
+            'Training Q4 F1 Score':train_scores['f1'][3],
+            'Training Q5 F1 Score':train_scores['f1'][4],
+            'Training Q6 F1 Score':train_scores['f1'][5],
+            'Training Q7 F1 Score':train_scores['f1'][6],
+
+            # Validation Set
+            'Validation Q1 F1 Score':scores['f1'][0],
+            'Validation Q2 F1 Score':scores['f1'][1],
+            'Validation Q3 F1 Score':scores['f1'][2],
+            'Validation Q4 F1 Score':scores['f1'][3],
+            'Validation Q5 F1 Score':scores['f1'][4],
+            'Validation Q6 F1 Score':scores['f1'][5],
+            'Validation Q7 F1 Score':scores['f1'][6]
+        }, step=epoch_i)
+
         if np.mean(scores['p_score']) > best_prec:
-            best_model = copy.deepcopy(model)
+            best_model = copy.deepcopy(nmodel)
             best_prec = np.mean(scores['p_score'])
+
+            # Save model to wandb
+            # wandb.save('checkpoints_best_val.pt')
+            # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
+            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
+
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
 
     return best_model
 
