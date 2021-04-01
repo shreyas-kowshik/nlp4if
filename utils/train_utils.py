@@ -210,6 +210,7 @@ def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, 
             nmodel.zero_grad()
             preds = nmodel(sent_id, mask)
             loss_val = loss_fn(preds, labels)
+            total_train_loss += loss_val
             optimizer.zero_grad()
             loss_val.backward()
             optimizer.step()
