@@ -230,8 +230,8 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
         if name in other_named_params:
             params.append(param)
     
-    optimizer1 = AdamW(bert_params.parameters(), lr=2e-5, eps = 1e-8)
-    optimizer2 = AdamW(params, lr=1e-4, eps = 1e-8)
+    optimizer1 = AdamW(bert_params.parameters(), lr=lr1, eps = 1e-8)
+    optimizer2 = AdamW(params, lr=lr2, eps = 1e-8)
     scheduler1 = get_linear_schedule_with_warmup(optimizer1, 
                                                 num_warmup_steps = 0, # Default value in run_glue.py
                                                 num_training_steps = total_steps)
