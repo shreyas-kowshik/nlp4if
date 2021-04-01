@@ -188,9 +188,9 @@ def evaluate(nmodel, test_dataloader, device):
 '''
 
 # Define training loop here #
-def train(nmodel, training_dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_type="classwise_sum"):
-    optimizer = AdamW(model.parameters(),lr = lr)
-    model.train()
+def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, loss_type="classwise_sum"):
+    optimizer = AdamW(nmodel.parameters(),lr = lr)
+    nmodel.train()
 
     loss_fn = None
     if loss_type == "classwise_sum":
@@ -199,14 +199,16 @@ def train(nmodel, training_dataloader, val_dataloader, device, num_epochs, lr=1e
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
 
-    best_model = copy.deepcopy(model)
+    best_model = copy.deepcopy(nmodel)
     best_prec = 0
-    for epoch in range(num_epochs):
-        for i,batch in enumerate(dataloader):
+    for epoch_i in tqdm(range(0, epochs)):
+        total_train_loss = 0
+        nmodel.train()
+        for step, batch in enumerate(training_dataloader):
             batch = [r.to(device) for r in batch]
             sent_id, mask, labels = batch
-            model.zero_grad()
-            preds = model(sent_id, mask)
+            nmodel.zero_grad()
+            preds = nmodel(sent_id, mask)
             loss_val = loss_fn(preds, labels)
             optimizer.zero_grad()
             loss_val.backward()
