@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import copy
 import argparse
+from distutils.util import strtobool
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
@@ -10,8 +11,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import transformers
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
-# Config Import #
-# from config.config import *
 # Model Imports #
 from models.bert_basic import *
 # Utils Imports #
@@ -49,17 +48,16 @@ parser.add_argument("-loss", "--loss_type", type=str, default="classwise_sum",
                     help="Loss")
 parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
                     help="Wandb Run Name")
+parser.add_argument("-log_to_wnb", "--log_to_wnb", type=strtobool, default=True,
+                    help="Wandb Run Name")
 
 args = parser.parse_args()
 
 # Add initial values here #
-wandb.init(name=args.wandb_run, project='nlp_runs', entity='nlp4if')
-# wandb_cfg = wandb.config
-# wandb_cfg.learning_rate = learning_rate
-# wandb_cfg.batch_size = BATCH_SIZE
-# wandb_cfg.epochs = EPOCHS
-# wandb_cfg.loss_type = loss_type
-wandb.config.update(args)
+if args.log_to_wnb==True:
+    print('###########################')
+    wandb.init(name=args.wandb_run, project='nlp_runs', entity='nlp4if')
+    wandb.config.update(args)
 ###########################
 
 ### Base Parameters ###
@@ -73,13 +71,6 @@ DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 sentences, labels, train_les = process_data(TRAIN_FILE)
 sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
 
-# idx = [i for i in range(len(sentences))]
-# np.random.shuffle(idx)
-# train_idx, val_idx = train_test_split(idx, test_size=0.2, random_state=42)
-# train_x = sentences[train_idx]
-# val_x = sentences[val_idx]
-# train_y = labels[train_idx, :]
-# val_y = labels[val_idx, :]
 train_x = sentences
 train_y = labels
 val_x = sentences_dev
@@ -135,8 +126,11 @@ if args.model_to_use=="bert_not_train_emb":
     model = BERTBasic(freeze_bert_params=True)
 elif args.model_to_use=="bert_train_emb":
     model = BERTBasic(freeze_bert_params=False)
+elif args.model_to_use=="bert_attn":
+    model = BERTAttention(freeze_bert_params=False)
 
-wandb.watch(model, log="all")
+if args.log_to_wnb==True:
+    wandb.watch(model, log="all")
     
 model = model.to(device)
 #########################
@@ -148,6 +142,9 @@ if args.model_to_use=="bert_not_train_emb":
 elif args.model_to_use=="bert_train_emb":
     model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
+elif args.model_to_use=="bert_attn":
+    model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+                lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
 ### Print Stats ###
 print("---Final Dev Stats---")
@@ -155,20 +152,21 @@ scores = evaluate_model(model, val_dataloader, args.device)
 display_metrics(scores)
 
 # Save summary wandb
-wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
-wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
-wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
-wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
-wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
-wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
-wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
-wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
-wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
-wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
-wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
+if args.log_to_wnb==True:
+    wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
+    wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
+    wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
+    wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
+    wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
+    wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
+    wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
+    wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
+    wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
+    wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
+    wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
 
-# Save model to wandb
-# wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
-# model.save(os.path.join(wandb.run.dir, "final_model.pt"))
-# wandb.save('checkpoints_final_model.pt')
-# torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
+    # Save model to wandb
+    # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
+    # model.save(os.path.join(wandb.run.dir, "final_model.pt"))
+    # wandb.save('checkpoints_final_model.pt')
+    # torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
