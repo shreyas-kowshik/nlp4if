@@ -30,9 +30,9 @@ learning_rate_embeddings = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
 i=0
 for bs in batch_size:
     for lr in learning_rate:
-        for lr_emb in learning_rate_embeddings:
-            i+=1
-            if i>=args.start_from:
-                WANDB_TRIAL_NAME = ('_').join([args.wandb_run, str(i)])
-                print(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME} -model bert_not_train_emb')
-                os.system(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME} -model bert_not_train_emb')
+        # for lr_emb in learning_rate_embeddings:
+        i+=1
+        if i>=args.start_from:
+            WANDB_TRIAL_NAME = ('_').join([args.wandb_run, str(i)])
+            print(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME} -model bert_not_train_emb')
+            os.system(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME} -model bert_not_train_emb')
