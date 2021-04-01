@@ -188,7 +188,7 @@ def evaluate(nmodel, test_dataloader, device):
 '''
 
 # Define training loop here #
-def train(model, dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_type="classwise_sum"):
+def train(nmodel, training_dataloader, val_dataloader, device, num_epochs, lr=1e-5, loss_type="classwise_sum"):
     optimizer = AdamW(model.parameters(),lr = lr)
     model.train()
 
