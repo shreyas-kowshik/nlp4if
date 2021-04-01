@@ -189,7 +189,17 @@ def evaluate(nmodel, test_dataloader, device):
 
 # Define training loop here #
 def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, loss_type="classwise_sum"):
-    optimizer = AdamW(nmodel.parameters(),lr = lr)
+    bert_params = nmodel.embeddings
+    bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
+    model_named_params = [name_ for name_, param_ in nmodel.named_parameters()]
+    other_named_params = [i for i in model_named_params if i not in bert_named_params]
+    params = []
+
+    for name, param in nmodel.named_parameters():
+        if name in other_named_params:
+            params.append(param)
+
+    optimizer = AdamW(params,lr = lr,eps=1e-8)
     nmodel.train()
 
     loss_fn = None
