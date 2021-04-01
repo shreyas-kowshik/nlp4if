@@ -171,4 +171,4 @@ wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
 # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
 # model.save(os.path.join(wandb.run.dir, "final_model.pt"))
 # wandb.save('checkpoints_final_model.pt')
-torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
+# torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
