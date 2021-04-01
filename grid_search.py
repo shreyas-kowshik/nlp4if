@@ -35,4 +35,4 @@ for bs in batch_size:
             if i>=args.start_from:
                 WANDB_TRIAL_NAME = ('_').join([args.wandb_run, str(i)])
                 print(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME}')
-                os.system(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 2 -wdbr {WANDB_TRIAL_NAME}')
+                os.system(f'python bert_train.py -bs {bs} -lr {lr} -lr_emb {lr_emb} -e 100 -wdbr {WANDB_TRIAL_NAME}')
