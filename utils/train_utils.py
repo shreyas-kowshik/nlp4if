@@ -318,6 +318,6 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             # Save model to wandb
             # wandb.save('checkpoints_best_val.pt')
             # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
-            torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pt"))
+            torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
     
     return best_model

@@ -35,7 +35,7 @@ parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_em
                     help="Which model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
-parser.add_argument("-bs", "--batch_size", type=int, default=8,
+parser.add_argument("-bs", "--batch_size", type=int, default=32,
                     help="Batch Size")
 parser.add_argument("-e", "--epochs", type=int, required=True,
                     help="Epochs")
@@ -171,4 +171,4 @@ wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
 # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
 # model.save(os.path.join(wandb.run.dir, "final_model.pt"))
 # wandb.save('checkpoints_final_model.pt')
-torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "final_model.pt"))
+torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
