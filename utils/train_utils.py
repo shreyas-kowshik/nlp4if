@@ -135,8 +135,10 @@ def generate_out_files(nmodel, test_dataloader, device):
     np.savetxt("tmp/preds_tem.tsv", y_preds, delimiter="\t",fmt='%s')
     np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
 
-def evaluate_model(nmodel, test_dataloader, device):
-    generate_out_files(nmodel, test_dataloader, device)
+    return y_preds, y_test
+
+def evaluate_model(nmodel, test_dataloader, device, return_files=False):
+    y_preds, y_test = generate_out_files(nmodel, test_dataloader, device)
 
     truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
 
@@ -152,7 +154,10 @@ def evaluate_model(nmodel, test_dataloader, device):
         for metric in scores:
             scores[metric].append(eval(metric))
 
-    return scores
+    if not return_files:
+        return scores
+    else:
+        return scores, y_preds, y_test
 
 def display_metrics(scores):
     print("--------------")
@@ -274,7 +279,7 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
         print('Total Train Loss =', total_train_loss)
         print('#############    Validation Set Stats')
         train_scores = evaluate_model(nmodel, training_dataloader, device)
-        scores = evaluate_model(nmodel, val_dataloader, device)
+        scores, val_preds, val_gt = evaluate_model(nmodel, val_dataloader, device, return_files=True)
         display_metrics(scores)
 
         # Log scores on wandb
@@ -318,6 +323,11 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             # Save model to wandb
             # wandb.save('checkpoints_best_val.pt')
             # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
-            torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
+            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
+
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
+
+
     
     return best_model
