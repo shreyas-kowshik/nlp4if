@@ -10,7 +10,7 @@ def classwise_sum(outputs, targets, weights, device=torch.device(device_name)):
     for i in range(targets.shape[1]):
         # Add extra weight to 1
         if i == 0:
-            loss += (3.0 * criterion[i](outputs[i], targets[:, i]))
+            loss += (1.0 * criterion[i](outputs[i], targets[:, i]))
         else:
             loss += criterion[i](outputs[i], targets[:, i])
     

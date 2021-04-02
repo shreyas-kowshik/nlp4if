@@ -16,19 +16,19 @@ def attention(q, k, v, d_k, mask=None, dropout=None):
     # This is a seq_lenxseq_len matrix, shape : (bs, heads, q_seq_len, k_seq_len)
     # print("Scores : {}".format(scores.shape))
     
-    if dropout is not None:
-        scores = dropout(scores)
+    # if dropout is not None:
+    #     scores = dropout(scores)
     
     output = torch.matmul(scores, v)
     return output
 
 class LinearBlock(nn.Module):
-  def __init__(self, in_dim, out_dim, use_bn=False):
+  def __init__(self, in_dim, out_dim, use_bn=True):
         super(LinearBlock, self).__init__()
 
         self.linear = nn.Linear(in_dim, out_dim)
         self.use_bn = use_bn
-        self.bn = nn.BatchNorm2d(out_dim)
+        self.bn = nn.BatchNorm1d(out_dim)
         self.relu = nn.ReLU()
 
   def forward(self, x):
@@ -106,6 +106,8 @@ class MultiHeadAttention(nn.Module):
 class BERTAttentionClasswise(nn.Module):
     # TODO : Add dropout prob to arparse
     def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3):
+      print("BERTAttentionClasswise Being Used!\n\n\n")
+
       super(BERTAttentionClasswise, self).__init__()
       self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
 
