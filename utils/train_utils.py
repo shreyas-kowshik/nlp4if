@@ -307,6 +307,11 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
 
+    # Load class weights for loss function
+    wts = []
+    for i in range(7):
+        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+
     best_model = copy.deepcopy(nmodel)
     best_prec = 0
     for epoch_i in tqdm(range(0, epochs)):
@@ -316,7 +321,7 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             batch = [r.to(device) for r in batch]
             sent_id, mask, labels = batch
             ypreds = nmodel(sent_id, mask)
-            loss = loss_fn(ypreds, labels)
+            loss = loss_fn(ypreds, labels, wts)
             # if step%50==0:
             #     loss_val = total_train_loss/(step+1.00)
             #     print('Loss = '+loss_val)

@@ -13,6 +13,7 @@ import transformers
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 # Model Imports #
 from models.bert_basic import *
+from models.BertAttentionClasswise import *
 # Utils Imports #
 from utils.preprocess import *
 from utils.train_utils import *
@@ -74,6 +75,9 @@ train_x = sentences
 train_y = labels
 val_x = sentences_dev
 val_y = labels_dev
+
+# Generate class weights #
+generate_class_weights(TRAIN_FILE)
 ########################
 
 ### Tokenize Data ###
@@ -127,6 +131,9 @@ elif args.model_to_use=="bert_train_emb":
     model = BERTBasic(freeze_bert_params=False)
 elif args.model_to_use=="bert_attn":
     model = BERTAttention(freeze_bert_params=False)
+elif args.model_to_use=="bert_attn_classwise":
+	model = BERTAttentionClasswise(freeze_bert_params=False)
+model = model.to(device)
 
 if args.log_to_wnb==True:
     wandb.watch(model, log="all")
@@ -143,6 +150,9 @@ elif args.model_to_use=="bert_train_emb":
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 elif args.model_to_use=="bert_attn":
     model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+                lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
+else: # default behavior
+	model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
 ### Print Stats ###

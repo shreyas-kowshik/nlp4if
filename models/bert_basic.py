@@ -70,6 +70,8 @@ class Attention(nn.Module):
         if bias:
             self.b = nn.Parameter(torch.zeros(step_dim))
 
+    # Input shape : (32(B), 56(SEQ_LEN), 512(INPUT DIM))
+    # Output shape : (32, 512)
     def forward(self, x, mask=None):
         feature_dim = self.feature_dim
         step_dim = self.step_dim
@@ -88,11 +90,11 @@ class Attention(nn.Module):
         if mask is not None:
             a = a * mask
 
+        a = (a - torch.min(a, 1, keepdim=True)[0])
         a = a / (torch.sum(a, 1, keepdim=True) + 1e-10)
 
         weighted_input = x * torch.unsqueeze(a, -1)
         return torch.sum(weighted_input, 1)
-
 
 class BERTAttention(nn.Module):
     def __init__(self, freeze_bert_params=True):
@@ -126,9 +128,12 @@ class BERTAttention(nn.Module):
     def forward(self, sent_id, mask):
       # Bert
       sequence_output = self.embeddings(sent_id, attention_mask=mask)[0]
+      print("Sequence Output Shape : {}".format(sequence_output.shape))
       # LSTM, Attention
       lstm_layer, _ = self.lstm(sequence_output)
+      print("LSTM Out Shape : {}".format(lstm_layer.shape))
       attn_layer = self.attention_layer(lstm_layer)
+      print("Attention Shape : {}".format(attn_layer.shape))
 
       # Initial layers
       x = self.fc1(attn_layer)

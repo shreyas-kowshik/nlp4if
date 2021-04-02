@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report
 import transformers
 import pandas as pd
 import numpy as np
+import os
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 
 # specify GPU
@@ -22,6 +23,32 @@ def summarise_data(data_path='data/english/v1/v1/covid19_disinfo_binary_english_
     print('--------')
     for i in range(7):
         print(i); print(tem['q'+str(i+1)+'_label'].value_counts()); print('-----');
+
+def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv'):
+    print("Generating Class Weights")
+    if not os.path.exists('data/class_weights'):
+        os.mkdir('data/class_weights')
+
+    data = pd.read_csv(data_path, sep='\t')
+    data=data.dropna(subset=['q7_label', 'q6_label'])
+    tem = data.iloc[:, 2:].fillna('nan')
+
+    for i in range(7):
+        x = np.array(tem['q' + str(i+1) + '_label'])
+        wts = []
+        class_count = len(np.where(x == 'no')[0])
+        wts.append(class_count / (1.0 * len(x)))
+        class_count = len(np.where(x == 'yes')[0])
+        wts.append(class_count / (1.0 * len(x)))
+
+        if i in [1, 2, 3, 4]:
+            class_count = len(np.where(x == 'nan')[0])
+            wts.append(class_count / (1.0 * len(x)))
+
+        wts = np.array(wts)
+        np.save(os.path.join('data/class_weights', 'q' + str(i+1) + '.npy'), wts)
+
+
 
 '''
 data_path : path in string where data is held
