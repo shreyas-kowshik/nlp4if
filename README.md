@@ -33,4 +33,3 @@ Other:
 - Try Multihead attention instead of self-attention
 
 ## TODO
-- MAP on val set in not logged for indiviual task
