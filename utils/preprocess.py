@@ -5,10 +5,23 @@ import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import transformers
+import pandas as pd
+import numpy as np
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 
 # specify GPU
 # device = torch.device("cuda")
+
+def summarise_data(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv'):
+    data = pd.read_csv(data_path, sep='\t')
+    data=data.dropna(subset=['q7_label', 'q6_label'])
+    tem = data.iloc[:, 2:].fillna('nan')
+    print('Training Label Statistics')
+    print('--------')
+    print(tem.describe())
+    print('--------')
+    for i in range(7):
+        print(i); print(tem['q'+str(i+1)+'_label'].value_counts()); print('-----');
 
 '''
 data_path : path in string where data is held
