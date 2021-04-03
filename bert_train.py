@@ -135,6 +135,8 @@ elif args.model_to_use=="bert_attn":
     model = BERTAttention(freeze_bert_params=False)
 elif args.model_to_use=="bert_attn_classwise":
 	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob)
+elif args.model_to_use=="bert_attn_classwise_weighted":
+	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob)
 model = model.to(device)
 
 if args.log_to_wnb==True:

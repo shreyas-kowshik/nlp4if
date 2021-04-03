@@ -244,3 +244,164 @@ class BERTAttentionClasswise(nn.Module):
       # print(out7.shape)
 
       return [out1, out2, out3, out4, out5, out6, out7]
+
+
+
+class BERTAttentionClasswiseWeighted(nn.Module):
+    # This also learns weights for loss function
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3):
+      print("BERTAttentionClasswiseWeighted Being Used!\n\n\n")
+
+      super(BERTAttentionClasswiseWeighted, self).__init__()
+      self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
+
+      if freeze_bert_params:
+        for param in self.embeddings.parameters():
+          param.requires_grad=False
+
+      self.num_heads = num_heads
+
+      self.dropout_common = nn.Dropout(dropout_prob)
+      self.dropout1 = nn.Dropout(dropout_prob)
+      self.dropout2 = nn.Dropout(dropout_prob)
+      self.dropout3 = nn.Dropout(dropout_prob)
+      self.dropout4 = nn.Dropout(dropout_prob)
+      self.dropout5 = nn.Dropout(dropout_prob)
+      self.dropout6 = nn.Dropout(dropout_prob)
+      self.dropout7 = nn.Dropout(dropout_prob)
+
+      self.fc1 = LinearBlock(768,512)
+      self.fc2 = LinearBlock(512,512)
+
+      self.fc_out1 = LinearBlock(512,512)
+      self.fc_out2 = LinearBlock(512,512)
+      self.fc_out3 = LinearBlock(512,512)
+      self.fc_out4 = LinearBlock(512,512)
+      self.fc_out5 = LinearBlock(512,512)
+      self.fc_out6 = LinearBlock(512,512)
+      self.fc_out7 = LinearBlock(512,512)
+
+      self.fc_out1_2 = LinearBlock(512,256)
+      self.fc_out2_2 = LinearBlock(512,256)
+      self.fc_out3_2 = LinearBlock(512,256)
+      self.fc_out4_2 = LinearBlock(512,256)
+      self.fc_out5_2 = LinearBlock(512,256)
+      self.fc_out6_2 = LinearBlock(512,256)
+      self.fc_out7_2 = LinearBlock(512,256)
+
+      self.attn1 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn2 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn3 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn4 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn5 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn6 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+      self.attn7 = MultiHeadAttention(self.num_heads, self.num_heads * 256)
+
+      # Penultimate layers
+      # Variance prediction layers
+      self.log_var1 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var2 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var3 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var4 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var5 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var6 = nn.Linear(self.num_heads * 256, 1)
+      self.log_var7 = nn.Linear(self.num_heads * 256, 1)
+
+      self.out1 = nn.Linear(self.num_heads * 256, 2)
+      self.out2 = nn.Linear(self.num_heads * 256, 3)
+      self.out3 = nn.Linear(self.num_heads * 256, 3)
+      self.out4 = nn.Linear(self.num_heads * 256, 3)
+      self.out5 = nn.Linear(self.num_heads * 256, 3)
+      self.out6 = nn.Linear(self.num_heads * 256, 2)
+      self.out7 = nn.Linear(self.num_heads * 256, 2)
+
+
+    #define the forward pass
+    def forward(self, sent_id, mask):
+      # Bert
+      bert_output = self.embeddings(sent_id, attention_mask=mask)[1]
+
+      x = self.fc1(bert_output)
+      x = self.dropout_common(x)
+      x = self.fc2(x)
+
+      # Individual Processing
+      x1 = self.fc_out1(x)
+      x1 = self.dropout1(x1)
+      x1 = self.fc_out1_2(x1)
+
+      x2 = self.fc_out2(x)
+      x2 = self.dropout2(x2)
+      x2 = self.fc_out2_2(x2)
+
+      x3 = self.fc_out3(x)
+      x3 = self.dropout3(x3)
+      x3 = self.fc_out3_2(x3)
+
+      x4 = self.fc_out4(x)
+      x4 = self.dropout4(x4)
+      x4 = self.fc_out4_2(x4)
+
+      x5 = self.fc_out5(x)
+      x5 = self.dropout5(x5)
+      x5 = self.fc_out5_2(x5)
+
+      x6 = self.fc_out6(x)
+      x6 = self.dropout6(x6)
+      x6 = self.fc_out6_2(x6)
+
+      x7 = self.fc_out7(x)
+      x7 = self.dropout7(x7)
+      x7 = self.fc_out7_2(x7)
+
+      # Attention
+      # Prepare input
+      x1 = torch.cat(self.num_heads*[x1], 1).unsqueeze(1)
+      x2 = torch.cat(self.num_heads*[x2], 1).unsqueeze(1)
+      x3 = torch.cat(self.num_heads*[x3], 1).unsqueeze(1)
+      x4 = torch.cat(self.num_heads*[x4], 1).unsqueeze(1)
+      x5 = torch.cat(self.num_heads*[x5], 1).unsqueeze(1)
+      x6 = torch.cat(self.num_heads*[x6], 1).unsqueeze(1)
+      x7 = torch.cat(self.num_heads*[x7], 1).unsqueeze(1)
+
+      attn_cat_inp = torch.cat([x1, x2, x3, x4, x5, x6, x7], 1)
+      attn_out1 = self.attn1(x1, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out2 = self.attn2(x2, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out3 = self.attn3(x3, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out4 = self.attn4(x4, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out5 = self.attn5(x5, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out6 = self.attn6(x6, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+      attn_out7 = self.attn7(x7, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+
+      # print(attn_inp.shape)
+
+      # Apply attention
+      # attn_out = self.attn(attn_inp, attn_inp, attn_inp)
+
+      # print("Attn Out : {}".format(attn_out.shape))
+
+      log_var1 = self.log_var1(attn_out1)
+      log_var2 = self.log_var2(attn_out2)
+      log_var3 = self.log_var3(attn_out3)
+      log_var4 = self.log_var4(attn_out4)
+      log_var5 = self.log_var5(attn_out5)
+      log_var6 = self.log_var6(attn_out6)
+      log_var7 = self.log_var7(attn_out7)
+
+      out1 = self.out1(attn_out1) / (torch.exp(log_var1) + 1e-8)
+      out2 = self.out2(attn_out2) / (torch.exp(log_var2) + 1e-8)
+      out3 = self.out3(attn_out3) / (torch.exp(log_var3) + 1e-8)
+      out4 = self.out4(attn_out4) / (torch.exp(log_var4) + 1e-8)
+      out5 = self.out5(attn_out5) / (torch.exp(log_var5) + 1e-8)
+      out6 = self.out6(attn_out6) / (torch.exp(log_var6) + 1e-8)
+      out7 = self.out7(attn_out7) / (torch.exp(log_var7) + 1e-8)
+
+      # print(out1.shape)
+      # print(out2.shape)
+      # print(out3.shape)
+      # print(out4.shape)
+      # print(out5.shape)
+      # print(out6.shape)
+      # print(out7.shape)
+
+      return [out1, out2, out3, out4, out5, out6, out7]
