@@ -66,82 +66,6 @@ def predict_labels(nmodel, test_dataloader, device):
     y_test = np.vstack(y_test)
     return y_preds, y_test
 
-
-# def scorer_indiv(truths, submitted, all_classes):
-#     print(np.unique(truths))
-#     print(np.unique(submitted))
-#     print("------------------")
-#     acc = accuracy_score(truths, submitted)
-#     f1 = f1_score(truths, submitted, labels=all_classes, average='weighted')
-#     p_score = precision_score(truths, submitted, labels=all_classes, average='weighted')
-#     r_score = recall_score(truths, submitted, labels=all_classes, average='weighted')
-#     return acc, f1, p_score, r_score
-
-# def scorer(y_true, y_pred, les):
-#     """
-#     les : label_encoders
-#     """
-#     truths = {}
-#     truths_ids = {}
-#     preds = {}
-
-#     for i in range(7):
-#         truths[i] = []
-#         preds[i] = []
-#         truths_ids[i] = []
-
-#     for i in range(7):
-#         maps = les[i].transform(les[i].classes_)
-#         encode_dict = {}
-#         for j in range(len(les[i].classes_)):
-#             encode_dict[les[i].classes_[j]] = maps[j]
-#         label_encode_dict.append(encode_dict)
-
-#     for i, _label in enumerate(y_true):
-#         for j in range(7):
-#             if 'nan' in les[j].classes_:
-#                 if _label[j] == label_encode_dict[j]['nan']: # Addressing 'nan' issues
-#                     continue
-#                 else:
-#                     truths[j].append(_label[j])
-#                     truths_ids[j].append(i)
-#             else:
-#                 truths[j].append(_label[j])
-#                 truths_ids[j].append(i)
-
-#     for i, _label in enumerate(y_pred):
-#         for j in range(7):
-#             if i in truths_ids[j]:
-#                 preds[j].append(_label[j])
-    
-#     for i in range(7):
-#         assert(len(truths[i])==len(preds[i]))
-
-#     scores = {
-#         'acc': [],
-#         'f1': [],
-#         'p_score': [],
-#         'r_score': [],
-#     }
-
-#     print("Evaluating...")
-#     all_classes = [0, 1]
-#     for i in range(7):
-#         print("class-id : {}".format(i+1))
-#         acc, f1, p_score, r_score = scorer_indiv(truths[i], preds[i], all_classes)
-#         for metric in scores:
-#             scores[metric].append(eval(metric))        
-#     scores_mean = copy.deepcopy(scores)
-#     for i in scores_mean:
-#         scores_mean[i]=np.mean(scores_mean[i])
-
-#     return scores_mean, scores
-
-# def evaluate(nmodel, test_dataloader, test_les, device):
-#     y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
-#     scores_mean, scores = scorer(y_preds, y_test, test_les)
-#     return scores_mean, scores
-
 def inverse_transform(y):
     y = y.astype(str)
     # Convert encodings to hardcoded values
@@ -265,22 +189,7 @@ def get_model_embeddings(nmodel, dataloader, device):
     print("Embedding Shape : {}".format(embeddings.shape))
     return embeddings
 
-'''    
-# scorer
-def scorer(y_preds, y_test):
-    # Averaged classwise accuracy
-    accs = np.sum((y_preds==y_test).astype(int), axis=0)/len(y_test)*100
-    total_accs = np.average(accs)
-    return accs, total_accs
-
-def evaluate(nmodel, test_dataloader, device):
-    y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
-    classwise_acc, total_acc = scorer(y_preds, y_test)
-    return classwise_acc, total_acc
-'''
-
 # Define training loop here #
-
 def train_ml(MODEL, X_train, Y_TRAIN_FULL, X_val, cw):
     y_pred_train, y_pred_val = [], []
     for i in range(7):
