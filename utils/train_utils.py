@@ -216,9 +216,14 @@ def get_model_embeddings(nmodel, dataloader, device):
         sent_id, mask, labels = batch
         with torch.no_grad():        
             emb = nmodel(sent_id, mask, get_embedding=True)
-            emb = np.vstack([np.argmax(i.cpu().numpy(), axis=1) for i in emb]).T
+            emb = np.vstack([i.cpu().numpy() for i in emb])
+            # print(emb.shape)
+            # print("\n\n\n")
             embeddings.append(emb)
     embeddings = np.vstack(embeddings)
+
+    print("\n\n\n")
+    print("Embedding Shape : {}".format(embeddings.shape))
     return embeddings
 
 '''    
