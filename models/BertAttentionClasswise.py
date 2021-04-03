@@ -168,7 +168,7 @@ class BERTAttentionClasswise(nn.Module):
 
 
     #define the forward pass
-    def forward(self, sent_id, mask):
+    def forward(self, sent_id, mask, get_embedding=False):
       # Bert
       bert_output = self.embeddings(sent_id, attention_mask=mask)[1]
 
@@ -233,6 +233,10 @@ class BERTAttentionClasswise(nn.Module):
       # attn_out = self.attn(attn_inp, attn_inp, attn_inp)
 
       # print("Attn Out : {}".format(attn_out.shape))
+
+      if get_embedding:
+        out_cat = torch.cat([attn_out1, attn_out2, attn_out3, attn_out4, attn_out5, attn_out6, attn_out7], 1)
+        return out_cat
 
       out1 = self.out1(attn_out1)
       out2 = self.out2(attn_out2)

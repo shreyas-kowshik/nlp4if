@@ -55,6 +55,8 @@ parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
                     help="Wandb Run Name")
 parser.add_argument("-log_to_wnb", "--log_to_wnb", type=strtobool, default=True,
                     help="Wandb Run Name")
+parser.add_argument("-save_emb", "--save_emb", type=strtobool, default=False,
+                    help="Save Model Embeddings")
 
 args = parser.parse_args()
 
@@ -196,3 +198,9 @@ if args.log_to_wnb==True:
     # model.save(os.path.join(wandb.run.dir, "final_model.pt"))
     # wandb.save('checkpoints_final_model.pt')
     # torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
+
+if args.save_emb==True:
+	train_emb = get_model_embeddings(model, train_dataloader, args.device)
+	val_emb = get_model_embeddings(model, val_dataloader, args.device)
+	np.save(os.path.join(wandb.run.dir, "train_emb.npy"), train_emb)
+	np.save(os.path.join(wandb.run.dir, "val_emb.npy"), val_emb)

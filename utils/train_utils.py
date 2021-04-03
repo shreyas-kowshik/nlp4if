@@ -173,6 +173,19 @@ def display_metrics(scores):
     print('PRECISION:', scores['p_score'])
     print('RECALL:', scores['r_score'])
 
+def get_model_embeddings(nmodel, dataloader, device):
+    nmodel.eval()
+    embeddings = []
+    for i, batch in enumerate(dataloader):
+        batch = [r.to(device) for r in batch]
+        sent_id, mask, labels = batch
+        with torch.no_grad():        
+            emb = nmodel(sent_id, mask, get_embedding=True)
+            emb = np.vstack([np.argmax(i.cpu().numpy(), axis=1) for i in emb]).T
+            embeddings.append(emb)
+    embeddings = np.vstack(embeddings)
+    return embeddings
+
 '''    
 # scorer
 def scorer(y_preds, y_test):
