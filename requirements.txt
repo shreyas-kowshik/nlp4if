@@ -1,2 +1,4 @@
 transformers
 wandb
+unidecode
+demoji
