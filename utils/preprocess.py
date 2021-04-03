@@ -97,8 +97,8 @@ def process_data(data_path):
         
     return np.array(sentences), labels, les
 
-def tokenize(sentences, use_type_tokens = True, padding = True, max_len = 25):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased')
+def tokenize(sentences, use_type_tokens = True, padding = True, max_len = 25, bert_base='bert-base-uncased'):
+    tokenizer = BertTokenizer.from_pretrained(bert_base)
     input_ids = []
     attention_masks = []
     token_type_ids = []
@@ -140,7 +140,7 @@ def bert_tokenize(sentences, max_seq_len=25, bert_base='bert-base-uncased'):
 	Returns :
 		- bert corresponding tokens
 	"""
-	tokenizer = BertTokenizerFast.from_pretrained(bert_base)
+	tokenizer = BertTokenizer.from_pretrained(bert_base)
 
 	# tokenize and encode the sentences
 	tokens = tokenizer.batch_encode_plus(

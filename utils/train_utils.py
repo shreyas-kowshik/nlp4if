@@ -320,6 +320,11 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
         for step, batch in enumerate(training_dataloader):
             batch = [r.to(device) for r in batch]
             sent_id, mask, labels = batch
+
+            # print(sent_id.shape)
+            # print("\n\n\n")
+            # print(mask.shape)
+
             ypreds = nmodel(sent_id, mask)
             loss = loss_fn(ypreds, labels, wts)
             # if step%50==0:

@@ -126,7 +126,11 @@ class BERTAttentionClasswise(nn.Module):
       self.dropout6 = nn.Dropout(dropout_prob)
       self.dropout7 = nn.Dropout(dropout_prob)
 
-      self.fc1 = LinearBlock(768,512)
+      embedding_dim=768
+      if bert_base=='bert-large-cased':
+        embedding_dim=1024
+
+      self.fc1 = LinearBlock(1024,512)
       self.fc2 = LinearBlock(512,512)
 
       self.fc_out1 = LinearBlock(512,512)
@@ -167,6 +171,9 @@ class BERTAttentionClasswise(nn.Module):
     def forward(self, sent_id, mask):
       # Bert
       bert_output = self.embeddings(sent_id, attention_mask=mask)[1]
+
+      # print(bert_output.shape)
+      # print("\n\n\n")
 
       x = self.fc1(bert_output)
       x = self.dropout_common(x)
