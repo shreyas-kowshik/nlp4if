@@ -85,9 +85,9 @@ generate_class_weights(TRAIN_FILE)
 ########################
 
 ### Tokenize Data ###
-tokens_train = bert_tokenize(train_x, args.max_seq_len)
-tokens_val = bert_tokenize(val_x, args.max_seq_len)
-tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len)
+tokens_train = bert_tokenize(train_x, args.max_seq_len, bert_base=args.bert_base)
+tokens_val = bert_tokenize(val_x, args.max_seq_len, bert_base=args.bert_base)
+tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len, bert_base=args.bert_base)
 
 #####################
 

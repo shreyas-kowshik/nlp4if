@@ -133,14 +133,14 @@ def tokenize(sentences, use_type_tokens = True, padding = True, max_len = 25):
         # print("input ids: {} attention_masks: {} token_type_ids: {}".format(input_ids.shape, attention_masks.shape, token_type_ids.shape))
         return {'input_ids':input_ids, 'attention_mask':attention_masks, 'token_type_ids':token_type_ids}
 
-def bert_tokenize(sentences, max_seq_len=25):
+def bert_tokenize(sentences, max_seq_len=25, bert_base='bert-base-uncased'):
 	"""
 	sentences : python list of sentences
 
 	Returns :
 		- bert corresponding tokens
 	"""
-	tokenizer = BertTokenizerFast.from_pretrained('bert-base-uncased')
+	tokenizer = BertTokenizerFast.from_pretrained(bert_base)
 
 	# tokenize and encode the sentences
 	tokens = tokenizer.batch_encode_plus(
