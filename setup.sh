@@ -2,6 +2,7 @@
 pip install transformers
 pip install wandb
 pip install unidecode
+pip install demoji
 wandb login
-git config --user.email "shreyaskowshik@gmail.com"
-git config --user.name "shreyas-kowshik"
+git config --global user.email "shreyaskowshik@gmail.com"
+git config --global user.name "shreyas-kowshik"
