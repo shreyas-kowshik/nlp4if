@@ -7,7 +7,46 @@ from utils.losses import *
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix, precision_recall_fscore_support
 import wandb
 import os
+from sklearn.feature_extraction.text import TfidfVectorizer
 from scorer.main import *
+from utils.preprocess import *
+
+def handcraft_features(DF_FILE_PATH):
+    # Get 8 features, input df path
+    df = pd.read_csv(DF_FILE_PATH, sep='\t')
+    df=df.dropna(subset=['q7_label', 'q6_label'])  
+    df = preprocess_cleaning(copy.deepcopy(df))
+    special_features = ['num_url', 'num_user_id', 'num_emoji', 'has_url', 'has_emoji', 'num_hashtags', 'num_user_mention', 'num_punctuation']
+    return df[special_features].to_numpy()
+
+def build_tfidf_ngrams(df_train, df_val, max_features=5000):
+    # Generate word and char tfidf ngrams
+    word_vectorizer = TfidfVectorizer(
+        sublinear_tf=True,
+        strip_accents='unicode',
+        analyzer='word',
+        token_pattern=r'\w{1,}',
+        stop_words='english',   
+        ngram_range=(1, 2),
+        max_features=max_features)
+
+    word_vectorizer.fit(df_train['text_cleaned'])
+    X_word_train = word_vectorizer.transform(df_train['text_cleaned']).toarray()
+    X_word_val = word_vectorizer.transform(df_val['text_cleaned']).toarray()
+
+    char_vectorizer = TfidfVectorizer(
+        sublinear_tf=True,
+        strip_accents='unicode',
+        analyzer='char',
+        ngram_range=(2, 3),
+        max_features=max_features)
+
+    char_vectorizer.fit(df_train['text_cleaned'])
+    X_char_train = char_vectorizer.transform(df_train['text_cleaned']).toarray()
+    X_char_val = char_vectorizer.transform(df_val['text_cleaned']).toarray()
+
+    return X_word_train, X_word_val, X_char_train, X_char_val
+
 
 # Evaluate
 def predict_labels(nmodel, test_dataloader, device):
@@ -241,6 +280,22 @@ def evaluate(nmodel, test_dataloader, device):
 '''
 
 # Define training loop here #
+
+def train_ml(MODEL, X_train, Y_TRAIN_FULL, X_val, cw):
+    y_pred_train, y_pred_val = [], []
+    for i in range(7):
+        print('Training model for task: ', i+1)
+        Y_train = Y_TRAIN_FULL[:,i].astype('int')
+        clf = MODEL(class_weight={n:j for n, j in enumerate(cw[i])}, random_state=42)
+        clf.fit(X_train, Y_train)
+        y_pred_train.append(clf.predict(X_train))
+        y_pred_val.append(clf.predict(X_val))
+
+    y_pred_train=np.vstack(y_pred_train).T
+    y_pred_val=np.vstack(y_pred_val).T
+
+    return clf, y_pred_train, y_pred_val
+
 def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, loss_type="classwise_sum"):
     bert_params = nmodel.embeddings
     bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
