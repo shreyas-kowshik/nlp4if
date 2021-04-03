@@ -249,11 +249,11 @@ class BERTAttentionClasswise(nn.Module):
 
 class BERTAttentionClasswiseWeighted(nn.Module):
     # This also learns weights for loss function
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, bert_base='bert-base-uncased'):
       print("BERTAttentionClasswiseWeighted Being Used!\n\n\n")
 
       super(BERTAttentionClasswiseWeighted, self).__init__()
-      self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
+      self.embeddings = AutoModel.from_pretrained(bert_base)#, output_hidden_states = True)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
