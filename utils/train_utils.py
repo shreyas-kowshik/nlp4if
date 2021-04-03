@@ -123,6 +123,18 @@ def inverse_transform(y):
     return y
 
 
+def generate_out_files_ml(y_preds, y_test):
+    y_preds = inverse_transform(y_preds)
+    y_test = inverse_transform(y_test)
+
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    np.savetxt("tmp/preds_tem.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
+
+    return y_preds, y_test
+
 def generate_out_files(nmodel, test_dataloader, device):
     y_preds, y_test = predict_labels(nmodel, test_dataloader, device)
     
@@ -136,6 +148,29 @@ def generate_out_files(nmodel, test_dataloader, device):
     np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
 
     return y_preds, y_test
+
+def evaluate_model_ml(y_pred, y_test, return_files=False):
+    y_preds, y_test = generate_out_files_ml(y_pred, y_test)
+
+    truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
+
+    scores = {
+        'acc': [],
+        'f1': [],
+        'p_score': [],
+        'r_score': [],
+    }
+    all_classes = ["yes", "no"]
+    for i in range(7):
+        acc, f1, p_score, r_score = evaluate(truths[i+1], submitted[i+1], all_classes)
+        for metric in scores:
+            scores[metric].append(eval(metric))
+
+    if not return_files:
+        return scores
+    else:
+        return scores, y_preds, y_test
+
 
 def evaluate_model(nmodel, test_dataloader, device, return_files=False):
     y_preds, y_test = generate_out_files(nmodel, test_dataloader, device)

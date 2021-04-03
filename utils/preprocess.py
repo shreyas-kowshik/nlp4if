@@ -11,9 +11,97 @@ import os
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 # For preprocessing ASCII...
 from unidecode import unidecode
+import demoji
+import re
+import copy
+import string
+from itertools import groupby
+import nltk
+from nltk.corpus import stopwords
+from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
+
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+demoji.download_codes()
 
 # specify GPU
 # device = torch.device("cuda")
+
+def preprocess_cleaning(df):
+    '''
+    Convert non-ascii to ascii
+    Count URL, emoji, punc, hashtag, mentions
+    convert emoji to text
+    convert hashtag using camel case
+    lower text
+    '''
+
+    stop_words = stopwords.words('english')
+    EMOJI_TO_TEXT = demoji.findall((' ').join(df['tweet_text'].to_list()))
+    lemmatizer = WordNetLemmatizer()
+    wordnet_map = {"N":wordnet.NOUN, "V":wordnet.VERB, "J":wordnet.ADJ, "R":wordnet.ADV}
+
+    def lemmatize_words(text):
+        pos_tagged_text = nltk.pos_tag(text.split())
+        return " ".join([lemmatizer.lemmatize(word, wordnet_map.get(pos[0], wordnet.NOUN)) for word, pos in pos_tagged_text])
+
+    def clean_text(text):
+        '''Make text lowercase, remove text in square brackets, remove links, remove user mention,
+        remove punctuation, remove numbers and remove words containing numbers.'''
+        
+        text = re.sub('(#[A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', text))  # Split by camel case
+        text = text.lower()
+        text = re.sub('\[.*?\]', '', text)
+        text = re.sub('<.*?>+', '', text)
+        text = re.sub('@\w+', '', text) # mentions
+        text = re.sub('[%s]' % re.escape(string.punctuation), '', text) # remove punc
+        text = re.sub('\n', '', text)
+        text = re.sub(r'(.)\1+', r'\1\1', text) # char repeated more than twice. ex hellllp -> hellp
+        
+        return text
+
+    def emoji_to_text(text):
+        return ' '.join([EMOJI_TO_TEXT.get(i, i) for i in text.split(' ')])
+
+    df['num_url']=df['tweet_text'].apply(lambda x:x.count('URL'))
+    df['num_user_id']=df['tweet_text'].apply(lambda x:x.count('USERID'))
+    df['num_emoji'] = df['tweet_text'].apply(lambda x:len([i for i in x if i in EMOJI_TO_TEXT]))
+    
+    df['tweet_text']=df['tweet_text'].apply(lambda x:emoji_to_text(x))
+    df['tweet_text']=df['tweet_text'].apply(lambda x:unidecode(x))
+    df['tweet_text']=df['tweet_text'].apply(lambda x:lemmatize_words(x))
+    
+    df['has_url']=(df['num_url']>0).astype(int)
+    df['has_emoji']=(df['num_emoji']>0).astype(int)
+    df['num_hashtags'] = df['tweet_text'].str.findall(r'#(\w+)').apply(lambda x : len(x))
+    df['num_user_mention'] = df['tweet_text'].str.findall(r'@(\w+)').apply(lambda x : len(x))
+    df['num_punctuation'] = df['tweet_text'].str.replace(r'[\w\s#]+', '').apply(lambda x : len(x))
+    
+
+    df['text_cleaned'] = df['tweet_text'].apply(clean_text)
+    # Remove stop words
+    df['text_cleaned'] = df['text_cleaned'].str.split().apply(lambda x: [word for word in x if word not in stop_words]).apply(lambda x: ' '.join(x))
+    
+    return df
+
+def convert_label(labels):
+    for i in range(labels.shape[1]):
+        # Hardcode encoding : 0:no,1:yes,2:nan
+        if i in [1, 2, 3, 4]:
+            # Include nan
+            col = np.copy(labels[:,i])
+            col[np.where(col == 'no')] = 0
+            col[np.where(col == 'yes')] = 1
+            col[np.where(col == 'nan')] = 2
+            labels[:, i] = np.copy(col).astype(np.int32)
+        else:
+            col = np.copy(labels[:,i])
+            col[np.where(col == 'no')] = 0
+            col[np.where(col == 'yes')] = 1
+            labels[:, i] = np.copy(col).astype(np.int32)
+    return labels
 
 def summarise_data(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv'):
     data = pd.read_csv(data_path, sep='\t')
@@ -26,7 +114,7 @@ def summarise_data(data_path='data/english/v1/v1/covid19_disinfo_binary_english_
     for i in range(7):
         print(i); print(tem['q'+str(i+1)+'_label'].value_counts()); print('-----');
 
-def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv'):
+def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv', return_weights=False):
     print("Generating Class Weights")
     if not os.path.exists('data/class_weights'):
         os.mkdir('data/class_weights')
@@ -34,7 +122,7 @@ def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_
     data = pd.read_csv(data_path, sep='\t')
     data=data.dropna(subset=['q7_label', 'q6_label'])
     tem = data.iloc[:, 2:].fillna('nan')
-
+    WTS = []
     for i in range(7):
         x = np.array(tem['q' + str(i+1) + '_label'])
         wts = []
@@ -48,9 +136,11 @@ def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_
             wts.append(class_count / (1.0 * len(x)))
 
         wts = np.array(wts)
+        WTS.append(wts)
         np.save(os.path.join('data/class_weights', 'q' + str(i+1) + '.npy'), wts)
-
-
+    
+    if return_weights:
+        return WTS
 
 '''
 data_path : path in string where data is held
