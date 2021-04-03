@@ -33,6 +33,8 @@ parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v
                     help="Expects a path to dev folder")
 parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_emb",
                     help="Which model to use")
+parser.add_argument("-bbase", "--bert_base", type=str, default="bert-large-cased",
+                    help="Which bert base model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
 parser.add_argument("-bs", "--batch_size", type=int, default=32,
@@ -136,7 +138,7 @@ elif args.model_to_use=="bert_attn":
 elif args.model_to_use=="bert_attn_classwise":
 	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob)
 elif args.model_to_use=="bert_attn_classwise_weighted":
-	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob)
+	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
 model = model.to(device)
 
 if args.log_to_wnb==True:

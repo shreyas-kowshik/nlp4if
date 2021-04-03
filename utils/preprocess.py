@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 import os
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
+# For preprocessing ASCII...
+from unidecode import unidecode
 
 # specify GPU
 # device = torch.device("cuda")
@@ -61,7 +63,8 @@ Returns :
 def process_data(data_path):
     data = pd.read_csv(data_path, sep='\t')
     print("Dropping rows that contain nan in Q6_label or Q7_label")
-    data=data.dropna(subset=['q7_label', 'q6_label'])    
+    data=data.dropna(subset=['q7_label', 'q6_label'])  
+    data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
     sentences = data["tweet_text"]
     labels = np.array(data.iloc[:, 2:].fillna('nan'))
 
