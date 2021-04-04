@@ -529,9 +529,28 @@ def train_inc_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4
             'Validation Q7 F1 Score':scores['f1'][6]
         }, step=epoch_i)
 
-        if np.mean(scores['p_score']) > best_prec:
+        if np.mean(scores['f1']) > best_prec:
             best_model = copy.deepcopy(nmodel)
-            best_prec = np.mean(scores['p_score'])
+            best_prec = np.mean(scores['f1'])
+
+            wandb.run.summary['Best Validation Mean F1-Score'] = np.mean(scores['f1'])
+            wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
+            wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
+            wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
+            wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
+            wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
+            wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
+            wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
+            wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
+            wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
+            wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
+            wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
+            wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
+            wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
+            wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
+            wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
+            wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
+            wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
 
             # Save model to wandb
             # wandb.save('checkpoints_best_val.pt')

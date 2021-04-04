@@ -4,7 +4,7 @@ from transformers import AutoModel,BertModel,  BertTokenizerFast
 import torch
 import math
 import torch.nn.functional as F
-from BertAttentionClasswise import *
+from models.BertAttentionClasswise import *
 
 
 
@@ -34,7 +34,7 @@ class BERTAttentionIncorp(nn.Module):
       if bert_base=='bert-large-cased':
         embedding_dim=1024
 
-      self.fc1 = LinearBlock(1024,512)
+      self.fc1 = LinearBlock(embedding_dim,512)
       self.fc2 = LinearBlock(512,512)
 
       self.fc_out1 = LinearBlock(512,512)

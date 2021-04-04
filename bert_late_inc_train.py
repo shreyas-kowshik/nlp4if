@@ -33,7 +33,7 @@ parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english
                     help="Expects a path to training folder")
 parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v2/v2/",
                     help="Expects a path to dev folder")
-parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_emb",
+parser.add_argument("-model", "--model_to_use", type=str, default="bert_attention_incorp",
                     help="Which model to use")
 parser.add_argument("-bbase", "--bert_base", type=str, default="bert-large-cased",
                     help="Which bert base model to use")
@@ -125,9 +125,17 @@ df_val = preprocess_cleaning(copy.deepcopy(df_val))
 special_features = ['num_url', 'num_user_id', 'num_emoji', 'has_url', 'has_emoji', 'num_hashtags', 'num_user_mention', 'num_punctuation']
 
 # Incorporation hand-crafted features
-X_incorp_train = np.array(df_train[special_features])
-X_incorp_val = np.array(df_val[special_features])
-X_incorp_dev = X_incorp_val
+X_incorp_train = torch.Tensor(np.array(df_train[special_features]))
+X_incorp_val = torch.Tensor(np.array(df_val[special_features]))
+X_incorp_dev = torch.Tensor(X_incorp_val)
+
+print(X_incorp_train.shape)
+print(X_incorp_val.shape)
+print(train_seq.shape)
+print(val_seq.shape)
+print(train_y.shape)
+print(val_y.shape)
+print("\n\n\n")
 ###########################
 
 # wrap tensors
@@ -154,7 +162,7 @@ dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=args.bat
 
 ### Model Preparation ###
 if args.model_to_use=="bert_attention_incorp":
-    model = BERTAttentionIncorp(freeze_bert_params=False)
+    model = BERTAttentionIncorp(incorp_dim=X_incorp_train.shape[1], freeze_bert_params=False, bert_base=args.bert_base)
 else:
     print("Error : Model not valid")
     exit(0)
@@ -179,24 +187,25 @@ display_metrics(scores)
 
 # Save summary wandb
 if args.log_to_wnb==True:
-    wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
-    wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
-    wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
-    wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
-    wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
-    wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
-    wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
-    wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
-    wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
-    wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
-    wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
-    wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
-    wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
-    wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
-    wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
-    wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
-    wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
-    wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
+    wandb.run.summary["Description"] = "Best Values saved"
+    # wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
+    # wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
+    # wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
+    # wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
+    # wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
+    # wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
+    # wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
+    # wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
+    # wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
+    # wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
+    # wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
+    # wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
+    # wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
+    # wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
+    # wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
+    # wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
+    # wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
+    # wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
 
     # Save model to wandb
     # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
