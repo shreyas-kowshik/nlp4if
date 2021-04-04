@@ -139,24 +139,11 @@ model = model.to(device)
 #########################
 
 ### Train ###
-#model = train_v2_sc(model, train_dataloader, val_dataloader, args.device, args.epochs, 
-#            lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
+model = train_v2_sc(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+           lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
-#y_preds, y_test = predict_labels(model, val_dataloader, args.device)
-
-model.eval()
-y_preds = []
-y_test = []
-for i, batch in enumerate(val_dataloader):
-    batch = [r.to(device) for r in batch]
-    sent_id, mask, labels = batch
-    with torch.no_grad():
-        ypred = model(sent_id, mask)
-        y_preds.append(ypred)
-        y_test.append(labels)
-y_preds = np.vstack(y_preds)
-y_test = np.vstack(y_test)
-print(y_preds)
+score = evaluate_model_sc(model, val_dataloader, args.device)
+print(score)
 
 
 '''

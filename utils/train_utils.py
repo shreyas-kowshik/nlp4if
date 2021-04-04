@@ -47,6 +47,34 @@ def build_tfidf_ngrams(df_train, df_val, max_features=5000):
 
     return X_word_train, X_word_val, X_char_train, X_char_val
 
+def evaluate_model_sc(model, val_dataloader, device):
+    submitted, truths = predict_model_single_task(model, val_dataloader, device)
+    score={
+        'acc':accuracy_score(truths, submitted),
+        'f1':f1_score(truths, submitted, average='weighted'),
+        'p_score':precision_score(truths, submitted, average='weighted'),
+        'r_score':recall_score(truths, submitted, average='weighted')
+    }
+    return score
+
+def predict_model_single_task(model, val_dataloader, device):
+    model.eval()
+    y_preds = []
+    y_test = []
+    for i, batch in enumerate(val_dataloader):
+        batch = [r.to(device) for r in batch]
+        sent_id, mask, labels = batch
+        with torch.no_grad():
+            ypred = model(sent_id, mask)
+            y_preds.append(ypred.cpu().numpy())
+            y_test.append(labels.cpu().numpy())
+
+    y_preds=np.vstack(y_preds)
+    y_preds=np.argmax(y_preds, axis=1)
+    y_test=np.hstack(y_test)
+    return y_preds, y_test
+
+
 
 # Evaluate
 def predict_labels(nmodel, test_dataloader, device, inc_eval=False):
