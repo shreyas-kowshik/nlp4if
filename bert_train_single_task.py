@@ -84,8 +84,14 @@ else:
 ### Data Preparation ###
 sentences, labels, train_les = process_data(TRAIN_FILE)
 sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
+
+if args.task in [2, 3, 4, 5]:
+    indices_where_label_1_yes = np.where(labels_dev[:,0]==1)
+
 labels=labels[:,args.task-1]
 labels_dev=labels_dev[:,args.task-1]
+labels_dev=labels_dev[indices_where_label_1_yes]
+sentences_dev=sentences_dev[indices_where_label_1_yes]
 
 train_x = sentences
 train_y = labels
