@@ -145,37 +145,20 @@ model = train_v2_sc(model, train_dataloader, val_dataloader, args.device, args.e
 score = evaluate_model_sc(model, val_dataloader, args.device)
 print(score)
 
-
-'''
 ### Print Stats ###
 print("---Final Dev Stats---")
-scores = evaluate_model(model, val_dataloader, args.device)
-display_metrics(scores)
+score = evaluate_model_sc(model, val_dataloader, args.device)
+print(score)
 
 # Save summary wandb
 if args.log_to_wnb==True:
-    wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
-    wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
-    wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
-    wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
-    wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
-    wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
-    wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
-    wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
-    wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
-    wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
-    wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
-    wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
-    wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
-    wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
-    wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
-    wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
-    wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
-    wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
+    wandb.run.summary['Validation F1-Score']: val_scores['f1']
+    wandb.run.summary['Validation Precision']: val_scores['p_score']
+    wandb.run.summary['Validation Accuracy']: val_scores['acc']
+    wandb.run.summary['Validation Recall']: val_scores['r_score']
 
 if args.save_emb==True:
 	train_emb = get_model_embeddings(model, train_dataloader, args.device)
 	val_emb = get_model_embeddings(model, val_dataloader, args.device)
 	np.save(os.path.join(wandb.run.dir, "train_emb.npy"), train_emb)
 	np.save(os.path.join(wandb.run.dir, "val_emb.npy"), val_emb)
-'''

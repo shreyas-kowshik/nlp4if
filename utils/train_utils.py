@@ -513,34 +513,37 @@ def train_v2_sc(nmodel, training_dataloader, val_dataloader, device, epochs = 4,
 
         print('Total Train Loss =', total_train_loss)
         print('#############    Validation Set Stats')
-        '''
+        train_scores = evaluate_model_sc(nmodel, training_dataloader, device)
+        val_scores = evaluate_model_sc(nmodel, val_dataloader, device)
+        print(val_scores)
+
         # Log scores on wandb
         wandb.log({
             # Mean Scores
             'Training loss': total_train_loss,
-            'Training F1-Score': np.mean(train_scores['f1']),
-            'Training Accuracy': np.mean(train_scores['acc']),
-            'Training Precision': np.mean(train_scores['p_score']),
-            'Training Recall': np.mean(train_scores['r_score']),
+            'Training F1-Score': train_scores['f1'],
+            'Training Accuracy': train_scores['acc'],
+            'Training Precision': train_scores['p_score'],
+            'Training Recall': train_scores['r_score'],
 
-            'Validation F1-Score': np.mean(scores['f1']),
-            'Validation Accuracy': np.mean(scores['acc']),
-            'Validation Precision': np.mean(scores['p_score']),
-            'Validation Recall': np.mean(scores['r_score']),
+            'Validation F1-Score': val_scores['f1'],
+            'Validation Accuracy': val_scores['acc'],
+            'Validation Precision': val_scores['p_score'],
+            'Validation Recall': val_scores['r_score'],
         }, step=epoch_i)
 
-        if np.mean(scores['p_score']) > best_prec:
+        if val_scores['f1'] > best_prec:
             best_model = copy.deepcopy(nmodel)
-            best_prec = np.mean(scores['p_score'])
+            best_prec = val_scores['f1']
 
             # Save model to wandb
             # wandb.save('checkpoints_best_val.pt')
             # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
             # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
 
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
-        '''
+            # np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
+            # np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
+
     return best_model
 
 
