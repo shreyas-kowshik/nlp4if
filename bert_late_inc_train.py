@@ -162,7 +162,7 @@ dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=args.bat
 
 ### Model Preparation ###
 if args.model_to_use=="bert_attention_incorp":
-    model = BERTAttentionIncorp(incorp_dim=X_incorp_train.shape[1], freeze_bert_params=False, bert_base=args.bert_base)
+    model = BERTAttentionIncorp(incorp_dim=X_incorp_train.shape[1], freeze_bert_params=False, bert_base=args.bert_base, dropout_prob=args.dropout_prob)
 else:
     print("Error : Model not valid")
     exit(0)
