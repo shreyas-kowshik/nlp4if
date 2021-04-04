@@ -2,3 +2,5 @@ transformers
 wandb
 unidecode
 demoji
+nlpaug
+fairseq

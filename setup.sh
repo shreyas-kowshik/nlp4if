@@ -3,6 +3,8 @@ pip install transformers
 pip install wandb
 pip install unidecode
 pip install demoji
+pip install numpy requests nlpaug
+pip install fairseq
 wandb login
 git config --global user.email "shreyaskowshik@gmail.com"
 git config --global user.name "shreyas-kowshik"
