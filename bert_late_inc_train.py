@@ -188,24 +188,24 @@ display_metrics(scores)
 # Save summary wandb
 if args.log_to_wnb==True:
     wandb.run.summary["Description"] = "Best Values saved"
-    # wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
-    # wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
-    # wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
-    # wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
-    # wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
-    # wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
-    # wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
-    # wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
-    # wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
-    # wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
-    # wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
-    # wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
-    # wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
-    # wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
-    # wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
-    # wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
-    # wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
-    # wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
+    wandb.run.summary['Validation Mean F1-Score'] = np.mean(scores['f1'])
+    wandb.run.summary['Validation Accuracy'] = np.mean(scores['acc'])
+    wandb.run.summary['Validation Mean Precision'] = np.mean(scores['p_score'])
+    wandb.run.summary['Validation Mean Recall'] = np.mean(scores['r_score'])
+    wandb.run.summary['Validation Q1 F1 Score'] = scores['f1'][0]
+    wandb.run.summary['Validation Q2 F1 Score'] = scores['f1'][1]
+    wandb.run.summary['Validation Q3 F1 Score'] = scores['f1'][2]
+    wandb.run.summary['Validation Q4 F1 Score'] = scores['f1'][3]
+    wandb.run.summary['Validation Q5 F1 Score'] = scores['f1'][4]
+    wandb.run.summary['Validation Q6 F1 Score'] = scores['f1'][5]
+    wandb.run.summary['Validation Q7 F1 Score'] = scores['f1'][6]
+    wandb.run.summary['Validation Q1 F1 Precision'] = scores['p_score'][0]
+    wandb.run.summary['Validation Q2 F1 Precision'] = scores['p_score'][1]
+    wandb.run.summary['Validation Q3 F1 Precision'] = scores['p_score'][2]
+    wandb.run.summary['Validation Q4 F1 Precision'] = scores['p_score'][3]
+    wandb.run.summary['Validation Q5 F1 Precision'] = scores['p_score'][4]
+    wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
+    wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
 
     # Save model to wandb
     # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
