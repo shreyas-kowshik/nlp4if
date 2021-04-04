@@ -3,6 +3,21 @@ import transformers
 from transformers import AutoModel,BertModel,  BertTokenizerFast
 import torch
 
+class LinearBlock(nn.Module):
+  def __init__(self, in_dim, out_dim, use_bn=True):
+        super(LinearBlock, self).__init__()
+
+        self.linear = nn.Linear(in_dim, out_dim)
+        self.use_bn = use_bn
+        self.bn = nn.BatchNorm1d(out_dim)
+        self.relu = nn.ReLU()
+
+  def forward(self, x):
+    if self.use_bn:
+      return self.relu(self.bn(self.linear(x)))
+    else:
+      return self.relu(self.linear(x))
+
 class BERTBasic(nn.Module):
     def __init__(self, freeze_bert_params=True):
       super(BERTBasic, self).__init__()
@@ -97,7 +112,7 @@ class Attention(nn.Module):
         return torch.sum(weighted_input, 1)
 
 class BERTAttention(nn.Module):
-    def __init__(self, freeze_bert_params=True):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, bert_base='bert-base-uncased'):
       super(BERTAttention, self).__init__()
       self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
 
@@ -105,13 +120,17 @@ class BERTAttention(nn.Module):
         for param in self.embeddings.parameters():
           param.requires_grad=False
 
-      self.dropout = nn.Dropout(0.1)
-      self.lstm = nn.LSTM(768, 256, bidirectional=True, batch_first=True)
+      self.dropout_common = nn.Dropout(dropout_prob)
+
+      embedding_dim=768
+      if bert_base=='bert-large-cased':
+        embedding_dim=1024
+
+      self.lstm = nn.LSTM(embedding_dim, 256, bidirectional=True, batch_first=True)
       self.attention_layer = Attention(512, 56) # max_len in hard coded here
 
-      self.relu =  nn.ReLU()
-      self.fc1 = nn.Linear(512,512)
-      self.fc2 = nn.Linear(512,512)
+      self.fc1 = LinearBlock(512,512)
+      self.fc2 = LinearBlock(512,512)
 
       # softmax activation functions
       self.out_shared = nn.Linear(512, 256)
@@ -123,22 +142,20 @@ class BERTAttention(nn.Module):
       self.out6 = nn.Linear(512, 2)
       self.out7 = nn.Linear(512, 2)
 
-
     #define the forward pass
     def forward(self, sent_id, mask):
       # Bert
       sequence_output = self.embeddings(sent_id, attention_mask=mask)[0]
-      print("Sequence Output Shape : {}".format(sequence_output.shape))
+      #print("Sequence Output Shape : {}".format(sequence_output.shape))
       # LSTM, Attention
       lstm_layer, _ = self.lstm(sequence_output)
-      print("LSTM Out Shape : {}".format(lstm_layer.shape))
+      #print("LSTM Out Shape : {}".format(lstm_layer.shape))
       attn_layer = self.attention_layer(lstm_layer)
-      print("Attention Shape : {}".format(attn_layer.shape))
+      #print("Attention Shape : {}".format(attn_layer.shape))
 
       # Initial layers
       x = self.fc1(attn_layer)
-      x = self.relu(x)
-      x = self.dropout(x)
+      x = self.dropout_common(x)
       x = self.fc2(x)
 
       # Share out1 to out5 with initial weights since output depends on output of out1
@@ -152,3 +169,39 @@ class BERTAttention(nn.Module):
       out7 = self.out7(x)
 
       return [out1, out2, out3, out4, out5, out6, out7]
+
+class BERTAttentionSingleTask(nn.Module):
+    def __init__(self, num_labels, freeze_bert_params=True, dropout_prob=0.1, bert_base='bert-base-uncased'):
+      super(BERTAttentionSingleTask, self).__init__()
+      self.embeddings = AutoModel.from_pretrained(bert_base)
+
+      if freeze_bert_params:
+        for param in self.embeddings.parameters():
+          param.requires_grad=False
+
+      self.dropout_common = nn.Dropout(dropout_prob)
+
+      embedding_dim=768
+      if bert_base=='bert-large-cased':
+        embedding_dim=1024
+
+      self.lstm = nn.LSTM(embedding_dim, 256, dropout=0.2, bidirectional=True, batch_first=True, num_layers=2)
+      self.attention_layer = Attention(512, 56) # max_len in hard coded here
+
+      self.fc1 = LinearBlock(512,512)
+      self.fc2 = LinearBlock(512,256)
+      self.out = nn.Linear(256, num_labels)
+
+    #define the forward pass
+    def forward(self, sent_id, mask):
+      # Bert
+      sequence_output = self.embeddings(sent_id, attention_mask=mask)[0]
+      lstm_layer, _ = self.lstm(sequence_output)
+      attn_layer = self.attention_layer(lstm_layer)
+
+      x = self.fc1(attn_layer)
+      x = self.dropout_common(x)
+      x = self.fc2(x)
+      out = self.out(x)
+
+      return out

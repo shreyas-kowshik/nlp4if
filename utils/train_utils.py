@@ -329,6 +329,8 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
     loss_fn = None
     if loss_type == "classwise_sum":
         loss_fn = classwise_sum
+    elif loss_type == "single_class":
+        loss_fn = nn.CrossEntropyLoss()
     else:
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
@@ -347,16 +349,11 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             batch = [r.to(device) for r in batch]
             sent_id, mask, labels = batch
 
-            # print(sent_id.shape)
-            # print("\n\n\n")
-            # print(mask.shape)
-
             ypreds = nmodel(sent_id, mask)
-            loss = loss_fn(ypreds, labels, wts)
-            # if step%50==0:
-            #     loss_val = total_train_loss/(step+1.00)
-            #     print('Loss = '+loss_val)
-            #     # wandb.log({"loss":loss_val})
+            if loss_type == "classwise_sum":
+                loss = loss_fn(ypreds, labels, wts)
+            elif loss_type == "single_class":
+                loss = loss_fn(ypreds, labels)
 
             total_train_loss += loss
             optimizer1.zero_grad()
@@ -422,6 +419,100 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
 
 
     
+    return best_model
+
+
+# train_v2 for single class
+def train_v2_sc(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="single_class"):
+    total_steps = len(training_dataloader) * epochs
+    bert_params = nmodel.embeddings
+    bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
+    model_named_params = [name_ for name_, param_ in nmodel.named_parameters()]
+    other_named_params = [i for i in model_named_params if i not in bert_named_params]
+    params = []
+
+    for name, param in nmodel.named_parameters():
+        if name in other_named_params:
+            params.append(param)
+    
+    optimizer1 = AdamW(bert_params.parameters(), lr=lr2, eps = 1e-8)
+    optimizer2 = AdamW(params, lr=lr1, eps = 1e-8)
+    scheduler1 = get_linear_schedule_with_warmup(optimizer1, 
+                                                num_warmup_steps = 0, # Default value in run_glue.py
+                                                num_training_steps = total_steps)
+    scheduler2 = get_linear_schedule_with_warmup(optimizer2, 
+                                                num_warmup_steps = 0, # Default value in run_glue.py
+                                                num_training_steps = total_steps)
+
+    loss_fn = None
+    if loss_type == "classwise_sum":
+        loss_fn = classwise_sum
+    elif loss_type == "single_class":
+        loss_fn = nn.CrossEntropyLoss()
+    else:
+        print("Loss {} Not Defined".format(loss_type))
+        sys.exit(1)
+
+    # Load class weights for loss function
+    wts = []
+    for i in range(7):
+        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+
+    best_model = copy.deepcopy(nmodel)
+    best_prec = 0
+    for epoch_i in tqdm(range(0, epochs)):
+        total_train_loss = 0
+        nmodel.train()
+        for step, batch in enumerate(training_dataloader):
+            batch = [r.to(device) for r in batch]
+            sent_id, mask, labels = batch
+
+            ypreds = nmodel(sent_id, mask)
+            if loss_type == "classwise_sum":
+                loss = loss_fn(ypreds, labels, wts)
+            elif loss_type == "single_class":
+                loss = loss_fn(ypreds, labels)
+
+            total_train_loss += loss
+            optimizer1.zero_grad()
+            optimizer2.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(bert_params.parameters(), 1.0)
+            optimizer1.step()
+            optimizer2.step()
+            scheduler1.step()
+            scheduler2.step()
+
+        print('Total Train Loss =', total_train_loss)
+        print('#############    Validation Set Stats')
+        '''
+        # Log scores on wandb
+        wandb.log({
+            # Mean Scores
+            'Training loss': total_train_loss,
+            'Training F1-Score': np.mean(train_scores['f1']),
+            'Training Accuracy': np.mean(train_scores['acc']),
+            'Training Precision': np.mean(train_scores['p_score']),
+            'Training Recall': np.mean(train_scores['r_score']),
+
+            'Validation F1-Score': np.mean(scores['f1']),
+            'Validation Accuracy': np.mean(scores['acc']),
+            'Validation Precision': np.mean(scores['p_score']),
+            'Validation Recall': np.mean(scores['r_score']),
+        }, step=epoch_i)
+
+        if np.mean(scores['p_score']) > best_prec:
+            best_model = copy.deepcopy(nmodel)
+            best_prec = np.mean(scores['p_score'])
+
+            # Save model to wandb
+            # wandb.save('checkpoints_best_val.pt')
+            # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
+            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
+
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
+            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
+        '''
     return best_model
 
 
