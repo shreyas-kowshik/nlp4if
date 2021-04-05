@@ -35,3 +35,5 @@ Other:
 ## TODO
 - Train with augmented data
 - Train ensemble with glove and fasttext embeddings as well
+- Update data
+- Update loss weights according to new data
