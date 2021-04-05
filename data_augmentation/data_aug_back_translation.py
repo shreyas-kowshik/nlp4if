@@ -1,5 +1,6 @@
 import argparse
 from transformers import MarianMTModel, MarianTokenizer
+import copy
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v1/v1/",
@@ -36,6 +37,16 @@ def back_translate(texts, source_lang="en", target_lang="fr"):
     
     return back_translated_texts
 
+def aug_sentence(text):
+    augs = {}
+    print(' Back Translating es')
+    augs['es']=back_translate(text, source_lang="en", target_lang="es")
+    print(' Back Translating fr')
+    augs['fr']=back_translate(text, source_lang="en", target_lang="fr")
+    print(' Back Translating de')
+    augs['de']=back_translate(text, source_lang="en", target_lang="de")
+    return augs
+
 TRAIN_FILE=args.data_train_path+"covid19_disinfo_binary_english_train.tsv"
 DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 
@@ -49,16 +60,20 @@ en_model_name = 'Helsinki-NLP/opus-mt-ROMANCE-en'
 en_tokenizer = MarianTokenizer.from_pretrained(en_model_name)
 en_model = MarianMTModel.from_pretrained(en_model_name)
 
-index = randint(0, len(df_train)-1)
-en_texts = [df_train['tweet_text'][index]]
+augmented_dict = aug_sentence(df_train['tweet_text'].to_list())
 
-print("Original:")
-print(en_texts)
-print("en->es->en")
-aug_texts = back_translate(en_texts, source_lang="en", target_lang="es")
-print(aug_texts)
-print("en->fr->en")
-aug_texts = back_translate(en_texts, source_lang="en", target_lang="fr")
-print(aug_texts)    
+df_train_es = copy.deepcopy(df_train)
+df_train_fr = copy.deepcopy(df_train)
+df_train_de = copy.deepcopy(df_train)
 
+df_train_es.drop('tweet_text', inplace=True, axis=1)
+df_train_fr.drop('tweet_text', inplace=True, axis=1)
+df_train_de.drop('tweet_text', inplace=True, axis=1)
 
+df_train_es['tweet_text']=augmented_dict['es']
+df_train_fr['tweet_text']=augmented_dict['fr']
+df_train_de['tweet_text']=augmented_dict['de']
+
+df_train_es.to_csv('df_train_es.tsv', sep='\t', index=False)
+df_train_fr.to_csv('df_train_fr.tsv', sep='\t', index=False)
+df_train_de.to_csv('df_train_de.tsv', sep='\t', index=False)
