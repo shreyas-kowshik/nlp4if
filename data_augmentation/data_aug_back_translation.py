@@ -13,7 +13,7 @@ args = parser.parse_args()
 
 def translate(texts, model, tokenizer, language="fr"):
     # Prepare the text data into appropriate format for the model
-    template = lambda text: f"{text}" if language == "en" else f">>{language}<< {text}"
+    template = lambda text: "{text}" if language == "en" else ">>{language}<< {text}"
     src_texts = [template(text) for text in texts]
 
     # Tokenize the texts

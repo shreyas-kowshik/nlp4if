@@ -12,8 +12,8 @@ from sklearn.metrics import classification_report
 import transformers
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 # Model Imports #
-from models.bert_basic import *
-from models.BertAttentionClasswise import *
+from models.roberta_basic import *
+from models.RobertAttentionClasswise import *
 # Utils Imports #
 from utils.preprocess import *
 from utils.train_utils import *
@@ -34,7 +34,7 @@ parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v
                     help="Expects a path to dev folder")
 parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_emb",
                     help="Which model to use")
-parser.add_argument("-bbase", "--bert_base", type=str, default="bert-large-cased",
+parser.add_argument("-bbase", "--bert_base", type=str, default="roberta-large",
                     help="Which bert base model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
@@ -90,9 +90,9 @@ generate_class_weights(TRAIN_FILE)
 ########################
 
 ### Tokenize Data ###
-tokens_train = bert_tokenize(train_x, args.max_seq_len, bert_base=args.bert_base)
-tokens_val = bert_tokenize(val_x, args.max_seq_len, bert_base=args.bert_base)
-tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len, bert_base=args.bert_base)
+tokens_train = roberta_tokenize(train_x, args.max_seq_len, base=args.bert_base)
+tokens_val = roberta_tokenize(val_x, args.max_seq_len, base=args.bert_base)
+tokens_dev = roberta_tokenize(sentences_dev, args.max_seq_len, base=args.bert_base)
 
 # tokens_train = tokenize(train_x, max_len=args.max_seq_len, bert_base=args.bert_base)
 # tokens_val = tokenize(val_x, max_len=args.max_seq_len, bert_base=args.bert_base)
@@ -138,16 +138,10 @@ dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=args.bat
 ################################
 
 ### Model Preparation ###
-if args.model_to_use=="bert_not_train_emb":
-    model = BERTBasic(freeze_bert_params=True)
-elif args.model_to_use=="bert_train_emb":
-    model = BERTBasic(freeze_bert_params=False)
-elif args.model_to_use=="bert_attn":
-    model = BERTAttention(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
-elif args.model_to_use=="bert_attn_classwise":
-	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
-elif args.model_to_use=="bert_attn_classwise_weighted":
-	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
+if args.model_to_use=="roberta_attn":
+    model = ROBERTaAttention(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
+elif args.model_to_use=="roberta_attn_classwise":
+	model = ROBERTaAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
 model = model.to(device)
 
 if args.log_to_wnb==True:
@@ -157,13 +151,13 @@ model = model.to(device)
 #########################
 
 ### Train ###
-if args.model_to_use=="bert_not_train_emb":
+if args.model_to_use=="robert_not_train_emb":
     model = train(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr=args.learning_rate, loss_type=args.loss_type)
-elif args.model_to_use=="bert_train_emb":
+elif args.model_to_use=="roberta_train_emb":
     model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
-elif args.model_to_use=="bert_attn":
+elif args.model_to_use=="roberta_attn":
     model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 else: # default behavior
