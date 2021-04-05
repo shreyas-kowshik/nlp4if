@@ -95,39 +95,6 @@ OUTPUT_DIM = 7
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 model = GloveNet(len(TEXT.vocab), EMBEDDING_SIZE, OUTPUT_DIM, PAD_IDX, TEXT.vocab.vectors,TEXT_LENGTH, 150).to(device)
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-print(f'The model has {count_parameters(model):,} trainable parameters')
-
-def fit_epoch(iterator, model, optimizer, criterion, cw):
-    train_loss = 0
-    train_acc = 0
-    model.train()
-    all_y = []
-    all_y_hat = []
-    for batch in iterator:
-        optimizer.zero_grad()
-        y = torch.stack([batch.q1_label,
-                         batch.q2_label,
-                         batch.q3_label,
-                         batch.q4_label,
-                         batch.q5_label,
-                         batch.q6_label,
-                         batch.q7_label,
-                         ],dim=1).float().to(device)
-        y_hat = model(batch.tweet_text.to(device))
-        loss = criterion(y_hat, y, cw)
-        train_loss += loss.item()
-        loss.backward()
-        optimizer.step()
-        all_y.append(y)
-        all_y_hat.append(y_hat)
-    y = torch.cat(all_y,dim=0)
-    y_hat = torch.cat(all_y_hat,dim=0)
-    roc = roc_auc_score(y.cpu(),y_hat.sigmoid().detach().cpu())
-    return train_loss / len(iterator.dataset), roc
-
 wts = []
 for i in range(7):
     wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
@@ -136,4 +103,4 @@ lr=0.001
 wd=0
 criterion = classwise_sum
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-train_loss, train_roc = fit_epoch(train_iterator, model, optimizer, criterion, wts)
+train_loss, train_roc = fit_epoch(train_iterator, model, optimizer, criterion, wts, device)

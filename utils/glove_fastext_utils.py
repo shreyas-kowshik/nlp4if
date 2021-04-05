@@ -6,6 +6,35 @@ import torch.optim as optim
 import torch.nn.functional as F
 from utils.preprocess import *
 
+def fit_epoch(iterator, model, optimizer, criterion, cw, device):
+    train_loss = 0
+    train_acc = 0
+    model.train()
+    all_y = []
+    all_y_hat = []
+    for ni, batch in enumerate(iterator):
+        optimizer.zero_grad()
+        y = torch.stack([batch.q1_label,
+                         batch.q2_label,
+                         batch.q3_label,
+                         batch.q4_label,
+                         batch.q5_label,
+                         batch.q6_label,
+                         batch.q7_label,
+                         ],dim=1).to(device)
+        y_hat = model(batch.tweet_text.to(device))
+        loss = criterion(y_hat, y, cw)
+        train_loss += loss.item()
+        loss.backward()
+        optimizer.step()
+        all_y.append(y)
+        all_y_hat.append(y_hat)
+
+    # y = torch.cat(all_y,dim=0)
+    # y_hat = torch.cat(all_y_hat,dim=0)
+    # roc = roc_auc_score(y.cpu(),y_hat.sigmoid().detach().cpu())
+    # return train_loss / len(iterator.dataset), roc
+
 def convert_dataframe(df_path, file_name):
     if os.path.isfile('data_glove/'+file_name):
         print(file_name, 'already exists!')
