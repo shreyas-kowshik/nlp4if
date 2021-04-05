@@ -12,7 +12,7 @@ EPOCHS=args.epochs
 # Train BERT
 WANDB_TRIAL_NAME=args.wandb_run+'_bert_large'
 print("Training BERT Large")
-print(f'python bert_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e {EPOCHS} 100 -wdbr {WANDB_TRIAL_NAME} -model bert_attn --base bert-large-cased --save_model True')
+print(f'python bert_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e {EPOCHS} -wdbr {WANDB_TRIAL_NAME} -model bert_attn --base bert-large-cased --save_model True')
 os.system(f'python bert_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e {EPOCHS}  -wdbr {WANDB_TRIAL_NAME} -model bert_attn --base bert-large-cased --save_model True')
 
 WANDB_TRIAL_NAME=args.wandb_run+'_bert_small'
