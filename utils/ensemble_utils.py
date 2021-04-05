@@ -3,6 +3,7 @@ import copy
 from tqdm import tqdm
 import torch
 from transformers import AdamW, get_linear_schedule_with_warmup
+from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from utils.losses import *
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix, precision_recall_fscore_support
 import wandb
@@ -11,6 +12,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from scorer.main import *
 from utils.preprocess import *
 from utils.train_utils import *
+# Model Imports #
+from models.bert_basic import *
+from models.BertAttentionClasswise import *
+from models.roberta_basic import *
+from models.RobertAttentionClasswise import *
 
 def bert_soft_preds(nmodel, test_dataloader, device):
     nmodel.eval()
@@ -24,16 +30,15 @@ def bert_soft_preds(nmodel, test_dataloader, device):
         sent_id, mask, labels = batch
 
         with torch.no_grad():
-            ypreds = nmodel(sent_id, mask).cpu().numpy() # 7 outputs here
+            ypreds = nmodel(sent_id, mask) # 7 outputs here
             for i, class_preds in enumerate(ypreds):
                 if init:
-                    y_preds.append(class_preds)
+                    y_preds.append(class_preds.cpu().numpy())
                 else:
-                    y_preds[i] = np.vstack([y_preds[i], class_preds])
+                    y_preds[i] = np.vstack([y_preds[i], class_preds.cpu().numpy()])
             init=False
 
             labels=labels.cpu().numpy()
-            y_preds.append(ypred)
             y_test.append(labels)
 
     y_test = np.vstack(y_test)
@@ -59,7 +64,7 @@ def get_dataloader_bert_type(dev_file, model_type, model_base, max_seq_len=56, b
 
     dev_data = TensorDataset(dev_seq, dev_mask, dev_y)
     dev_sampler = SequentialSampler(dev_data)
-    dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size)
+    dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=batch_size)
 
     return dev_dataloader
 
@@ -71,33 +76,48 @@ def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttex
         if not wdbr in model_pth:
             continue
 
-        model = torch.load(os.path.join('bin', model_pth)).to(device)
+        ckpt = torch.load(os.path.join('bin', model_pth))
+
         val_dataloader=None
         if 'roberta' in model_pth:
             if 'large' in model_pth:
                 val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-large')
+                model = ROBERTaAttention(freeze_bert_params=False, base='roberta-large')
+                model.load_state_dict(ckpt)
             else:
                 val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-base')
+                model = ROBERTaAttentionClasswise(freeze_bert_params=False, base='roberta-base')
+                model.load_state_dict(ckpt)
         elif 'bert' in model_pth:
             if 'large' in model_pth:
                 val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-large-cased')
+                model = BERTAttention(freeze_bert_params=False, base='bert-large-cased')
+                model.load_state_dict(ckpt)
             else:
                 val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-base-uncased')
+                model = BERTAttentionClasswise(freeze_bert_params=False, base='bert-base-uncased')
+                model.load_state_dict(ckpt)
         else:
             if not use_glove_fasttext:
                 print("Error, model not understood in evluation")
                 exit(1)
-
-        ypreds, ytest = bert_soft_preds(model, val_dataloader, device)
+        
+        model = model.to(device)
+        ypreds, y_test = bert_soft_preds(model, val_dataloader, device)
+        # print(ypreds)
+        # print(ypreds[0].shape)
+        # print(ytest.shape)
         model_soft_preds.append(ypreds)
 
     for i in range(7):
         for j in range(1, len(model_soft_preds)):
             model_soft_preds[0][i] += model_soft_preds[j][i]
 
+    # print(model_soft_preds)
+
     model_soft_preds = model_soft_preds[0]
-    for i in model_soft_preds:
-        model_soft_preds[i] = np.argmax(model_soft_preds[i], axis=1, keepdims=True)
+    for i in range(len(model_soft_preds)):
+        model_soft_preds[i] = np.argmax(model_soft_preds[i], axis=1).reshape(-1, 1)
     y_preds = np.hstack(model_soft_preds)
 
     print(y_preds.shape)
