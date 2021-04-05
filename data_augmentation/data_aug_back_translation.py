@@ -117,20 +117,18 @@ df_train_es['tweet_text']=augmented_dict['es']
 df_train_es.to_csv('augmented_datasets/df_train_es.tsv', sep='\t', index=False)
 '''
 
-
+'''
 augmented_dict = aug_sentence_batch_fr(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_fr = copy.deepcopy(df_train)
 df_train_fr.drop('tweet_text', inplace=True, axis=1)
 df_train_fr['tweet_text']=augmented_dict['fr']
 df_train_fr.to_csv('augmented_datasets/df_train_fr.tsv', sep='\t', index=False)
-
-
 '''
+
 augmented_dict = aug_sentence_batch_de(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_de = copy.deepcopy(df_train)
 df_train_de.drop('tweet_text', inplace=True, axis=1)
 df_train_de['tweet_text']=augmented_dict['de']
 df_train_de.to_csv('augmented_datasets/df_train_de.tsv', sep='\t', index=False)
-'''
