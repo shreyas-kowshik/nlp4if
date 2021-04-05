@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import os
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
+from transformers import RobertaTokenizer
 # For preprocessing ASCII...
 from unidecode import unidecode
 import demoji
@@ -241,6 +242,25 @@ def bert_tokenize(sentences, max_seq_len=25, bert_base='bert-base-uncased'):
 	)
 
 	return tokens
+
+def roberta_tokenize(sentences, max_seq_len=25, base='bert-base-uncased'):
+    """
+    sentences : python list of sentences
+
+    Returns :
+        - bert corresponding tokens
+    """
+    tokenizer = RobertaTokenizer.from_pretrained(base)
+
+    # tokenize and encode the sentences
+    tokens = tokenizer.batch_encode_plus(
+        sentences.tolist(),
+        max_length = max_seq_len,
+        pad_to_max_length=True,
+        truncation=True
+    )
+
+    return tokens
 
 def plot_sentence_lengths(sentences):
 	# get length of all the messages in the sentences
