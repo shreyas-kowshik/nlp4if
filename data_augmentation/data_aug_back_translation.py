@@ -15,28 +15,26 @@ args = parser.parse_args()
 
 def translate(texts, model, tokenizer, language="fr"):
     # Prepare the text data into appropriate format for the model
-    template = lambda text: "{text}" if language == "en" else ">>{language}<< {text}"
+    template = lambda text: f"{text}" if language == "en" else f">>{language}<< {text}"
     src_texts = [template(text) for text in texts]
-
     # Tokenize the texts
     # encoded = tokenizer.prepare_seq2seq_batch(src_texts)
     encoded = tokenizer.prepare_seq2seq_batch(src_texts,return_tensors="pt")
+
     # Generate translation using model
     translated = model.generate(**encoded)
+
     # Convert the generated tokens indices back into text
     translated_texts = tokenizer.batch_decode(translated, skip_special_tokens=True)
-    
-    return translated_texts
 
+    return translated_texts
 def back_translate(texts, source_lang="en", target_lang="fr"):
     # Translate from source to target language
     fr_texts = translate(texts, target_model, target_tokenizer, 
                          language=target_lang)
-
     # Translate from target language back to source language
     back_translated_texts = translate(fr_texts, en_model, en_tokenizer, 
                                       language=source_lang)
-    
     return back_translated_texts
 
 def aug_sentence(text):
@@ -64,7 +62,9 @@ def aug_sentence_batch_es(text):
     for n, text_batch in enumerate(np.array_split(np.array(text), num_splits)):
         print(n)
         # augs['es']+=list(text_batch)
+        print(list(text_batch))
         augs['es']+=back_translate(list(text_batch), source_lang="en", target_lang="es")
+        print(augs['es'])
     print(time.time()-st)
     return augs
 
@@ -107,26 +107,28 @@ en_tokenizer = MarianTokenizer.from_pretrained(en_model_name)
 en_model = MarianMTModel.from_pretrained(en_model_name)
 print('en model ready')
 
-if False:
-    augmented_dict = aug_sentence_batch_es(df_train['tweet_text'].to_list())
-    print(augmented_dict)
-    df_train_es = copy.deepcopy(df_train)
-    df_train_es.drop('tweet_text', inplace=True, axis=1)
-    df_train_es['tweet_text']=augmented_dict['es']
-    df_train_es.to_csv('augmented_datasets/df_train_es.tsv', sep='\t', index=False)
 
-if True:
-    augmented_dict = aug_sentence_batch_fr(df_train['tweet_text'].to_list())
-    print(augmented_dict)
-    df_train_fr = copy.deepcopy(df_train)
-    df_train_fr.drop('tweet_text', inplace=True, axis=1)
-    df_train_fr['tweet_text']=augmented_dict['fr']
-    df_train_fr.to_csv('augmented_datasets/df_train_fr.tsv', sep='\t', index=False)
+'''
+augmented_dict = aug_sentence_batch_es(df_train['tweet_text'].to_list())
+print(augmented_dict)
+df_train_es = copy.deepcopy(df_train)
+df_train_es.drop('tweet_text', inplace=True, axis=1)
+df_train_es['tweet_text']=augmented_dict['es']
+df_train_es.to_csv('augmented_datasets/df_train_es.tsv', sep='\t', index=False)
+'''
 
-if False:
-    augmented_dict = aug_sentence_batch_de(df_train['tweet_text'].to_list())
-    print(augmented_dict)
-    df_train_de = copy.deepcopy(df_train)
-    df_train_de.drop('tweet_text', inplace=True, axis=1)
-    df_train_de['tweet_text']=augmented_dict['de']
-    df_train_de.to_csv('augmented_datasets/df_train_de.tsv', sep='\t', index=False)
+'''
+augmented_dict = aug_sentence_batch_fr(df_train['tweet_text'].to_list())
+print(augmented_dict)
+df_train_fr = copy.deepcopy(df_train)
+df_train_fr.drop('tweet_text', inplace=True, axis=1)
+df_train_fr['tweet_text']=augmented_dict['fr']
+df_train_fr.to_csv('augmented_datasets/df_train_fr.tsv', sep='\t', index=False)
+'''
+
+augmented_dict = aug_sentence_batch_de(df_train['tweet_text'].to_list())
+print(augmented_dict)
+df_train_de = copy.deepcopy(df_train)
+df_train_de.drop('tweet_text', inplace=True, axis=1)
+df_train_de['tweet_text']=augmented_dict['de']
+df_train_de.to_csv('augmented_datasets/df_train_de.tsv', sep='\t', index=False)
