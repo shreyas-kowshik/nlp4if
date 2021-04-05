@@ -3,6 +3,7 @@ import os
 import torch.nn as nn
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 from utils.preprocess import *
 
 def convert_dataframe(df_path, file_name):
@@ -36,7 +37,7 @@ class GloveNet(nn.Module):
       self.out7 = nn.Linear(50, 2)
       
     #define the forward pass
-    def forward(self, sent_id, mask):
+    def forward(self, text):
       a1 = self.embeddings(text)
       a2 = self.lstm(a1)[0]
       a3 = self.max_pool(a2).squeeze(1)
@@ -48,8 +49,8 @@ class GloveNet(nn.Module):
       out3 = self.out3(shared_x)
       out4 = self.out4(shared_x)
       out5 = self.out5(shared_x)
-      out6 = self.out6(x)
-      out7 = self.out7(x)
+      out6 = self.out6(shared_x)
+      out7 = self.out7(shared_x)
 
       return [out1, out2, out3, out4, out5, out6, out7]
 

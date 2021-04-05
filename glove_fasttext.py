@@ -16,6 +16,7 @@ import time
 import spacy
 import torch.nn.functional as F
 from utils.glove_fastext_utils import *
+from utils.train_utils import *
 
 #### Parse Arguments
 parser = argparse.ArgumentParser()
@@ -99,7 +100,7 @@ def count_parameters(model):
 
 print(f'The model has {count_parameters(model):,} trainable parameters')
 
-def fit_epoch(iterator, model, optimizer, criterion):
+def fit_epoch(iterator, model, optimizer, criterion, cw):
     train_loss = 0
     train_acc = 0
     model.train()
@@ -116,7 +117,7 @@ def fit_epoch(iterator, model, optimizer, criterion):
                          batch.q7_label,
                          ],dim=1).float().to(device)
         y_hat = model(batch.tweet_text.to(device))
-        loss = criterion(y_hat, y)
+        loss = criterion(y_hat, y, cw)
         train_loss += loss.item()
         loss.backward()
         optimizer.step()
@@ -127,8 +128,12 @@ def fit_epoch(iterator, model, optimizer, criterion):
     roc = roc_auc_score(y.cpu(),y_hat.sigmoid().detach().cpu())
     return train_loss / len(iterator.dataset), roc
 
+wts = []
+for i in range(7):
+    wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+
 lr=0.001
 wd=0
 criterion = classwise_sum
-optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
-train_loss, train_roc = fit_epoch(train_iterator, model, optimizer, criterion)
+optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
+train_loss, train_roc = fit_epoch(train_iterator, model, optimizer, criterion, wts)
