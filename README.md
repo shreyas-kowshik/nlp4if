@@ -33,5 +33,5 @@ Other:
 - Try Multihead attention instead of self-attention
 
 ## TODO
-- Add wandb config for ml_model_train.py [Will do later today]
-- Convert ml_model_train.py feature generation and training to proper functions [Will do later today]
+- Train with augmented data
+- Train ensemble with glove and fasttext embeddings as well
