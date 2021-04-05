@@ -49,7 +49,7 @@ def predict_glove(iterator, model, device):
                             ],dim=1).to(device)
         y_hat = model(batch.tweet_text.to(device))
         all_y.append(y)
-        all_y_hat.append([i for i in y_hat])
+        all_y_hat.append([np.argmax(i.detach().cpu().numpy()) for i in y_hat])
     print(all_y_hat)
     exit()
     all_y_hat = np.vstack([np.argmax(i, axis=1) for i in all_y_hat])
