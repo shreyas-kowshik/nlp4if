@@ -86,7 +86,7 @@ dev = TabularDataset(
     skip_header=True,
     fields=datafields)
 
-TEXT.build_vocab(train, max_size=20000, min_freq=5)
+TEXT.build_vocab(train, max_size=20000, min_freq=5, vectors='glove.840B.300d')
 
 random.seed(1234)
 train_iterator, valid_iterator = data.BucketIterator.splits((train, dev),
