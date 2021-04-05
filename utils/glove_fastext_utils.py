@@ -5,6 +5,59 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from utils.preprocess import *
+from utils.train_utils import *
+from scorer.main import *
+
+def evaluate_glove(iterator, model, device):
+    y_pred, y_test=predict_glove(iterator, model, device)
+    print(y_pred, y_test)
+    exit()
+    y_preds, y_test = generate_out_files_ml(y_pred, y_test)
+    print('------------------')
+    print(y_preds, y_test)
+    truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
+
+    scores = {
+        'acc': [],
+        'f1': [],
+        'p_score': [],
+        'r_score': [],
+    }
+    all_classes = ["yes", "no"]
+    for i in range(7):
+        acc, f1, p_score, r_score = evaluate(truths[i+1], submitted[i+1], all_classes)
+        for metric in scores:
+            scores[metric].append(eval(metric))
+
+    if not return_files:
+        return scores
+    else:
+        return scores, y_preds, y_test
+
+def predict_glove(iterator, model, device):
+    model.eval()
+    all_y = []
+    all_y_hat = []
+    for ni, batch in enumerate(iterator):
+        y = torch.stack([batch.q1_label,
+                            batch.q2_label,
+                            batch.q3_label,
+                            batch.q4_label,
+                            batch.q5_label,
+                            batch.q6_label,
+                            batch.q7_label,
+                            ],dim=1).to(device)
+        y_hat = model(batch.tweet_text.to(device))
+        all_y.append(y)
+        all_y_hat.append([i for i in y_hat])
+    print(all_y_hat)
+    exit()
+    all_y_hat = np.vstack([np.argmax(i, axis=1) for i in all_y_hat])
+    y_test = np.vstack(all_y)
+    print(y_preds)
+    # print(type(y_preds[i]))
+    # print(y_preds)
+    return y_preds, y_test
 
 def fit_epoch(iterator, model, optimizer, criterion, cw, device):
     train_loss = 0
@@ -29,11 +82,7 @@ def fit_epoch(iterator, model, optimizer, criterion, cw, device):
         optimizer.step()
         all_y.append(y)
         all_y_hat.append(y_hat)
-
-    # y = torch.cat(all_y,dim=0)
-    # y_hat = torch.cat(all_y_hat,dim=0)
-    # roc = roc_auc_score(y.cpu(),y_hat.sigmoid().detach().cpu())
-    # return train_loss / len(iterator.dataset), roc
+    return model
 
 def convert_dataframe(df_path, file_name):
     if os.path.isfile('data_glove/'+file_name):
@@ -100,4 +149,3 @@ class NNet(nn.Module):
         a4 = F.relu(self.fc1(a3))
         a5 = self.fc2(a4)
         return a5
-

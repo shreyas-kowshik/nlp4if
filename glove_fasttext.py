@@ -103,4 +103,5 @@ lr=0.001
 wd=0
 criterion = classwise_sum
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-train_loss, train_roc = fit_epoch(train_iterator, model, optimizer, criterion, wts, device)
+model = fit_epoch(train_iterator, model, optimizer, criterion, wts, device)
+predict_glove(train_iterator, model, device)
