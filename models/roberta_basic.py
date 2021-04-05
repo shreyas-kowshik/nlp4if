@@ -65,6 +65,7 @@ class Attention(nn.Module):
 class ROBERTaAttention(nn.Module):
     def __init__(self, freeze_bert_params=True, dropout_prob=0.1, base='roberta-base'):
       super(ROBERTaAttention, self).__init__()
+      print("RobertaAttention Being Used!!!\n\n\n")
       self.embeddings = RobertaModel.from_pretrained(base)
 
       if freeze_bert_params:

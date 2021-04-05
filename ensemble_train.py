@@ -8,6 +8,8 @@ parser.add_argument("-e", "--epochs", type=int, required=True,
 parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
                     help="Wandb Run Name")
 
+args = parser.parse_args()
+
 EPOCHS=args.epochs
 # Train BERT
 WANDB_TRIAL_NAME=args.wandb_run+'_bert_large'

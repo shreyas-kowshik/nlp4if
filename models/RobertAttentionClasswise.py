@@ -1,6 +1,6 @@
 import torch.nn as nn
 import transformers
-from transformers import AutoModel,BertModel,  BertTokenizerFast
+from transformers import AutoModel, RobertaTokenizer, RobertaModel
 import torch
 import math
 import torch.nn.functional as F
@@ -127,10 +127,10 @@ class ROBERTaAttentionClasswise(nn.Module):
       self.dropout7 = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='roberta-large':
+      if base=='roberta-large':
         embedding_dim=1024
 
-      self.fc1 = LinearBlock(1024,512)
+      self.fc1 = LinearBlock(embedding_dim,512)
       self.fc2 = LinearBlock(512,512)
 
       self.fc_out1 = LinearBlock(512,512)

@@ -114,6 +114,7 @@ class Attention(nn.Module):
 class BERTAttention(nn.Module):
     def __init__(self, freeze_bert_params=True, dropout_prob=0.1, base='bert-base-uncased'):
       super(BERTAttention, self).__init__()
+      print("BertAttention Being Used!!!\n\n\n")
       self.embeddings = AutoModel.from_pretrained(base)#, output_hidden_states = True)
 
       if freeze_bert_params:
