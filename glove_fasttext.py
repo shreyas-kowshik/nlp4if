@@ -26,11 +26,16 @@ parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v
                     help="Expects a path to dev folder")
 parser.add_argument("-device", "--device", type=str, default="cuda",
                     help="Device")
-parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
-                    help="Maximum sequence length")
 parser.add_argument("-bs", "--batch_size", type=int, default=32,
                     help="Batch Size")
-
+parser.add_argument("-e", "--epochs", type=int, required=True,
+                    help="Epochs")
+parser.add_argument("-lr", "--learning_rate", type=float, default=1e-3,
+                    help="Learning Rate of non-embedding params")
+parser.add_argument("-wd", "--weight_decay", type=int, default=0,
+                    help="Maximum sequence length")
+parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
+                    help="Maximum sequence length")
 args = parser.parse_args()
 
 ### Base Parameters ###
@@ -93,15 +98,14 @@ train_iterator, valid_iterator = data.BucketIterator.splits((train, dev),
 
 OUTPUT_DIM = 7
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
+
 model = GloveNet(len(TEXT.vocab), EMBEDDING_SIZE, OUTPUT_DIM, PAD_IDX, TEXT.vocab.vectors,TEXT_LENGTH, 150).to(device)
 
 wts = []
 for i in range(7):
     wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
 
-lr=0.001
-wd=0
-criterion = classwise_sum
-optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-model = fit_epoch(train_iterator, model, optimizer, criterion, wts, device)
-predict_glove(train_iterator, model, device)
+model=train_n_epochs(model, train_iterator, valid_iterator,  args.epochs,args.learning_rate,args.weight_decay, wts, device)
+scores=evaluate_glove(train_iterator, model, device)
+print(scores)
+print(np.mean(scores['f1']))

@@ -8,13 +8,9 @@ from utils.preprocess import *
 from utils.train_utils import *
 from scorer.main import *
 
-def evaluate_glove(iterator, model, device):
+def evaluate_glove(iterator, model, device, return_files=False):
     y_pred, y_test=predict_glove(iterator, model, device)
-    print(y_pred, y_test)
-    exit()
     y_preds, y_test = generate_out_files_ml(y_pred, y_test)
-    print('------------------')
-    print(y_preds, y_test)
     truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
 
     scores = {
@@ -49,15 +45,23 @@ def predict_glove(iterator, model, device):
                             ],dim=1).to(device)
         y_hat = model(batch.tweet_text.to(device))
         all_y.append(y)
-        all_y_hat.append([np.argmax(i.detach().cpu().numpy()) for i in y_hat])
-    print(all_y_hat)
-    exit()
-    all_y_hat = np.vstack([np.argmax(i, axis=1) for i in all_y_hat])
+        all_y_hat.append(np.vstack([np.argmax(i.detach().cpu().numpy(), axis=1) for i in y_hat]).T)
+        # q=np.vstack([np.argmax(i.detach().cpu().numpy(), axis=1) for i in y_hat]).T
+
+    y_preds = np.vstack(all_y_hat)
     y_test = np.vstack(all_y)
-    print(y_preds)
-    # print(type(y_preds[i]))
-    # print(y_preds)
     return y_preds, y_test
+
+def train_n_epochs(model, train_iterator, val_iterator, n, lr, wd, cw, device):
+    criterion = classwise_sum
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
+    for epoch in range(n):
+        model, loss = fit_epoch(train_iterator, model, optimizer, criterion, cw, device)
+        train_scores=evaluate_glove(train_iterator, model, device)
+        val_scores=evaluate_glove(val_iterator, model, device)
+        print('Epoch:', epoch, 'Mean F1 train', np.mean(train_scores['f1']), 'Val F1 train', np.mean(val_scores['f1']))
+    return model
+
 
 def fit_epoch(iterator, model, optimizer, criterion, cw, device):
     train_loss = 0
@@ -82,7 +86,7 @@ def fit_epoch(iterator, model, optimizer, criterion, cw, device):
         optimizer.step()
         all_y.append(y)
         all_y_hat.append(y_hat)
-    return model
+    return model, loss
 
 def convert_dataframe(df_path, file_name):
     if os.path.isfile('data_glove/'+file_name):
