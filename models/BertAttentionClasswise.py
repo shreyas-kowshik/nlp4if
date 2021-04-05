@@ -105,11 +105,11 @@ class MultiHeadAttention(nn.Module):
 
 class BERTAttentionClasswise(nn.Module):
     # TODO : Add dropout prob to arparse
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, bert_base='bert-base-uncased'):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, base='bert-base-uncased'):
       print("BERTAttentionClasswise Being Used!\n\n\n")
 
       super(BERTAttentionClasswise, self).__init__()
-      self.embeddings = AutoModel.from_pretrained(bert_base)#, output_hidden_states = True)
+      self.embeddings = AutoModel.from_pretrained(base)#, output_hidden_states = True)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
@@ -127,7 +127,7 @@ class BERTAttentionClasswise(nn.Module):
       self.dropout7 = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='bert-large-cased':
+      if base=='bert-large-cased':
         embedding_dim=1024
 
       self.fc1 = LinearBlock(1024,512)
@@ -260,11 +260,11 @@ class BERTAttentionClasswise(nn.Module):
 
 class BERTAttentionClasswiseWeighted(nn.Module):
     # This also learns weights for loss function
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, bert_base='bert-base-uncased'):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, base='bert-base-uncased'):
       print("BERTAttentionClasswiseWeighted Being Used!\n\n\n")
 
       super(BERTAttentionClasswiseWeighted, self).__init__()
-      self.embeddings = AutoModel.from_pretrained(bert_base)#, output_hidden_states = True)
+      self.embeddings = AutoModel.from_pretrained(base)#, output_hidden_states = True)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():

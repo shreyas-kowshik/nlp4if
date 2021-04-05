@@ -105,11 +105,11 @@ class MultiHeadAttention(nn.Module):
 
 class ROBERTaAttentionClasswise(nn.Module):
     # TODO : Add dropout prob to arparse
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, bert_base='roberta-base'):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, num_heads=3, base='roberta-base'):
       print("ROBERTaAttentionClasswise Being Used!\n\n\n")
 
       super(ROBERTaAttentionClasswise, self).__init__()
-      self.embeddings = RobertaModel.from_pretrained(bert_base)
+      self.embeddings = RobertaModel.from_pretrained(base)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
@@ -127,7 +127,7 @@ class ROBERTaAttentionClasswise(nn.Module):
       self.dropout7 = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='bert-large-cased':
+      if bert_base=='roberta-large':
         embedding_dim=1024
 
       self.fc1 = LinearBlock(1024,512)

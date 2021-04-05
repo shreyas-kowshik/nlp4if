@@ -34,7 +34,7 @@ parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v
                     help="Expects a path to dev folder")
 parser.add_argument("-model", "--model_to_use", type=str, default="bert_train_emb",
                     help="Which model to use")
-parser.add_argument("-bbase", "--bert_base", type=str, default="bert-large-cased",
+parser.add_argument("-bbase", "--base", type=str, default="bert-large-cased",
                     help="Which bert base model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
@@ -90,13 +90,13 @@ generate_class_weights(TRAIN_FILE)
 ########################
 
 ### Tokenize Data ###
-tokens_train = bert_tokenize(train_x, args.max_seq_len, bert_base=args.bert_base)
-tokens_val = bert_tokenize(val_x, args.max_seq_len, bert_base=args.bert_base)
-tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len, bert_base=args.bert_base)
+tokens_train = bert_tokenize(train_x, args.max_seq_len, base=args.base)
+tokens_val = bert_tokenize(val_x, args.max_seq_len, base=args.base)
+tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len, base=args.base)
 
-# tokens_train = tokenize(train_x, max_len=args.max_seq_len, bert_base=args.bert_base)
-# tokens_val = tokenize(val_x, max_len=args.max_seq_len, bert_base=args.bert_base)
-# tokens_dev = tokenize(sentences_dev, max_len=args.max_seq_len, bert_base=args.bert_base)
+# tokens_train = tokenize(train_x, max_len=args.max_seq_len, base=args.base)
+# tokens_val = tokenize(val_x, max_len=args.max_seq_len, base=args.base)
+# tokens_dev = tokenize(sentences_dev, max_len=args.max_seq_len, base=args.base)
 
 #####################
 
@@ -143,11 +143,11 @@ if args.model_to_use=="bert_not_train_emb":
 elif args.model_to_use=="bert_train_emb":
     model = BERTBasic(freeze_bert_params=False)
 elif args.model_to_use=="bert_attn":
-    model = BERTAttention(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
+    model = BERTAttention(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 elif args.model_to_use=="bert_attn_classwise":
-	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
+	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 elif args.model_to_use=="bert_attn_classwise_weighted":
-	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, bert_base=args.bert_base)
+	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 model = model.to(device)
 
 if args.log_to_wnb==True:
@@ -201,7 +201,7 @@ if args.save_model:
 	if not os.path.exists('bin'):
 		os.mkdir('bin')
 
-	torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '_' + args.bert_base))
+	torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '_' + args.base))
 
 if args.save_emb==True:
 	train_emb = get_model_embeddings(model, train_dataloader, args.device)

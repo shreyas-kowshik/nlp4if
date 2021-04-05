@@ -63,9 +63,9 @@ class Attention(nn.Module):
         return torch.sum(weighted_input, 1)
 
 class ROBERTaAttention(nn.Module):
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, bert_base='roberta-base'):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, base='roberta-base'):
       super(ROBERTaAttention, self).__init__()
-      self.embeddings = RobertaModel.from_pretrained(bert_base)
+      self.embeddings = RobertaModel.from_pretrained(base)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
@@ -74,7 +74,7 @@ class ROBERTaAttention(nn.Module):
       self.dropout_common = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='bert-large-cased':
+      if base=='roberta-large':
         embedding_dim=1024
 
       self.lstm = nn.LSTM(embedding_dim, 256, bidirectional=True, batch_first=True)

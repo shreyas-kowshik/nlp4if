@@ -112,9 +112,9 @@ class Attention(nn.Module):
         return torch.sum(weighted_input, 1)
 
 class BERTAttention(nn.Module):
-    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, bert_base='bert-base-uncased'):
+    def __init__(self, freeze_bert_params=True, dropout_prob=0.1, base='bert-base-uncased'):
       super(BERTAttention, self).__init__()
-      self.embeddings = AutoModel.from_pretrained(bert_base)#, output_hidden_states = True)
+      self.embeddings = AutoModel.from_pretrained(base)#, output_hidden_states = True)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
@@ -123,7 +123,7 @@ class BERTAttention(nn.Module):
       self.dropout_common = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='bert-large-cased':
+      if base=='bert-large-cased':
         embedding_dim=1024
 
       self.lstm = nn.LSTM(embedding_dim, 256, bidirectional=True, batch_first=True)
@@ -171,9 +171,9 @@ class BERTAttention(nn.Module):
       return [out1, out2, out3, out4, out5, out6, out7]
 
 class BERTAttentionSingleTask(nn.Module):
-    def __init__(self, num_labels, freeze_bert_params=True, dropout_prob=0.1, bert_base='bert-base-uncased'):
+    def __init__(self, num_labels, freeze_bert_params=True, dropout_prob=0.1, base='bert-base-uncased'):
       super(BERTAttentionSingleTask, self).__init__()
-      self.embeddings = AutoModel.from_pretrained(bert_base)
+      self.embeddings = AutoModel.from_pretrained(base)
 
       if freeze_bert_params:
         for param in self.embeddings.parameters():
@@ -182,7 +182,7 @@ class BERTAttentionSingleTask(nn.Module):
       self.dropout_common = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if bert_base=='bert-large-cased':
+      if base=='bert-large-cased':
         embedding_dim=1024
 
       self.lstm = nn.LSTM(embedding_dim, 256, dropout=0.2, bidirectional=True, batch_first=True, num_layers=2)
