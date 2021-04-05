@@ -12,112 +12,118 @@ from scorer.main import *
 from utils.preprocess import *
 from utils.train_utils import *
 
-def train_bert(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum", model_name="bert_base_uncase"):
-    total_steps = len(training_dataloader) * epochs
-    bert_params = nmodel.embeddings
-    bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
-    model_named_params = [name_ for name_, param_ in nmodel.named_parameters()]
-    other_named_params = [i for i in model_named_params if i not in bert_named_params]
-    params = []
+def bert_soft_preds(nmodel, test_dataloader, device):
+    nmodel.eval()
+    y_preds = []
+    y_test = []
+    init=True
 
-    for name, param in nmodel.named_parameters():
-        if name in other_named_params:
-            params.append(param)
-    
-    optimizer1 = AdamW(bert_params.parameters(), lr=lr2, eps = 1e-8)
-    optimizer2 = AdamW(params, lr=lr1, eps = 1e-8)
-    scheduler1 = get_linear_schedule_with_warmup(optimizer1, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
-    scheduler2 = get_linear_schedule_with_warmup(optimizer2, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
+    for i, batch in enumerate(test_dataloader):
+        batch = [r.to(device) for r in batch]
+        inc_feats = None
+        sent_id, mask, labels = batch
 
-    loss_fn = None
-    if loss_type == "classwise_sum":
-        loss_fn = classwise_sum
-    elif loss_type == "single_class":
-        loss_fn = nn.CrossEntropyLoss()
+        with torch.no_grad():
+            ypreds = nmodel(sent_id, mask).cpu().numpy() # 7 outputs here
+            for i, class_preds in enumerate(ypreds):
+                if init:
+                    y_preds.append(class_preds)
+                else:
+                    y_preds[i] = np.vstack([y_preds[i], class_preds])
+            init=False
+
+            labels=labels.cpu().numpy()
+            y_preds.append(ypred)
+            y_test.append(labels)
+
+    y_test = np.vstack(y_test)
+    return y_preds, y_test # y_preds : 7 elements, with each (N,num_classes) for each question, y_test is (N,7)
+
+def get_dataloader_bert_type(dev_file, model_type, model_base, max_seq_len=56, batch_size=32):
+    DEV_FILE=dev_file
+    sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
+    val_x = sentences_dev
+    val_y = labels_dev
+
+    ### Tokenize Data ###
+    if model_type=="bert":
+        tokens_dev = bert_tokenize(sentences_dev, max_seq_len, model_base)
     else:
-        print("Loss {} Not Defined".format(loss_type))
-        sys.exit(1)
+        tokens_dev = roberta_tokenize(sentences_dev, max_seq_len, model_base)
+    #####################
 
-    # Load class weights for loss function
-    wts = []
+    ### Dataloader Preparation ###
+    dev_seq = torch.tensor(tokens_dev['input_ids'])
+    dev_mask = torch.tensor(tokens_dev['attention_mask'])
+    dev_y = torch.tensor(labels_dev.tolist())
+
+    dev_data = TensorDataset(dev_seq, dev_mask, dev_y)
+    dev_sampler = SequentialSampler(dev_data)
+    dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size)
+
+    return dev_dataloader
+
+
+def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
+    model_soft_preds = []
+    y_test = None
+    for model_pth in os.listdir('bin'):
+        if not wdbr in model_pth:
+            continue
+
+        model = torch.load(os.path.join('bin', model_pth)).to(device)
+        val_dataloader=None
+        if 'roberta' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-large')
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-base')
+        elif 'bert' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-large-cased')
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-base-uncased')
+        else:
+            if not use_glove_fasttext:
+                print("Error, model not understood in evluation")
+                exit(1)
+
+        ypreds, ytest = bert_soft_preds(model, val_dataloader, device)
+        model_soft_preds.append(ypreds)
+
     for i in range(7):
-        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+        for j in range(1, len(model_soft_preds)):
+            model_soft_preds[0][i] += model_soft_preds[j][i]
 
-    best_model = copy.deepcopy(nmodel)
-    best_f1 = 0
-    for epoch_i in tqdm(range(0, epochs)):
-        total_train_loss = 0
-        nmodel.train()
-        for step, batch in enumerate(training_dataloader):
-            batch = [r.to(device) for r in batch]
-            sent_id, mask, labels = batch
+    model_soft_preds = model_soft_preds[0]
+    for i in model_soft_preds:
+        model_soft_preds[i] = np.argmax(model_soft_preds[i], axis=1, keepdims=True)
+    y_preds = np.hstack(model_soft_preds)
 
-            ypreds = nmodel(sent_id, mask)
-            if loss_type == "classwise_sum":
-                loss = loss_fn(ypreds, labels, wts)
-            elif loss_type == "single_class":
-                loss = loss_fn(ypreds, labels)
+    print(y_preds.shape)
+    print(y_test.shape)
 
-            total_train_loss += loss
-            optimizer1.zero_grad()
-            optimizer2.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(bert_params.parameters(), 1.0)
-            optimizer1.step()
-            optimizer2.step()
-            scheduler1.step()
-            scheduler2.step()
+    y_preds = inverse_transform(y_preds)
+    y_test = inverse_transform(y_test)
 
-        print('Total Train Loss =', total_train_loss)
-        print('#############    Validation Set Stats')
-        train_scores = evaluate_model(nmodel, training_dataloader, device)
-        scores, val_preds, val_gt = evaluate_model(nmodel, val_dataloader, device, return_files=True)
-        display_metrics(scores)
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
 
-        # Log scores on wandb
-        wandb.log({
-            # Mean Scores
-            model_name + ' Training loss': total_train_loss,
-            model_name + ' Training Mean F1-Score': np.mean(train_scores['f1']),
-            model_name + ' Training Accuracy': np.mean(train_scores['acc']),
-            model_name + ' Training Mean Precision': np.mean(train_scores['p_score']),
-            model_name + ' Training Mean Recall': np.mean(train_scores['r_score']),
-            model_name + ' Validation Mean F1-Score': np.mean(scores['f1']),
-            model_name + ' Validation Accuracy': np.mean(scores['acc']),
-            model_name + ' Validation Mean Precision': np.mean(scores['p_score']),
-            model_name + ' Validation Mean Recall': np.mean(scores['r_score']),
-            model_name + ' Training Q1 F1 Score':train_scores['f1'][0],
-            model_name + ' Training Q2 F1 Score':train_scores['f1'][1],
-            model_name + ' Training Q3 F1 Score':train_scores['f1'][2],
-            model_name + ' Training Q4 F1 Score':train_scores['f1'][3],
-            model_name + ' Training Q5 F1 Score':train_scores['f1'][4],
-            model_name + ' Training Q6 F1 Score':train_scores['f1'][5],
-            model_name + ' Training Q7 F1 Score':train_scores['f1'][6],
-            model_name + ' Validation Q1 F1 Score':scores['f1'][0],
-            model_name + ' Validation Q2 F1 Score':scores['f1'][1],
-            model_name + ' Validation Q3 F1 Score':scores['f1'][2],
-            model_name + ' Validation Q4 F1 Score':scores['f1'][3],
-            model_name + ' Validation Q5 F1 Score':scores['f1'][4],
-            model_name + ' Validation Q6 F1 Score':scores['f1'][5],
-            model_name + ' Validation Q7 F1 Score':scores['f1'][6]
-        }, step=epoch_i)
+    np.savetxt("tmp/preds_tem.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
 
-        if np.mean(scores['f1']) > best_f1:
-            best_model = copy.deepcopy(nmodel)
-            best_f1 = np.mean(scores['f1'])
+    truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
 
-            # Save model to wandb
-            # wandb.save('checkpoints_best_val.pt')
-            # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
-            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
+    scores = {
+        'acc': [],
+        'f1': [],
+        'p_score': [],
+        'r_score': [],
+    }
+    all_classes = ["yes", "no"]
+    for i in range(7):
+        acc, f1, p_score, r_score = evaluate(truths[i+1], submitted[i+1], all_classes)
+        for metric in scores:
+            scores[metric].append(eval(metric))
 
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
-
-
-    
-    return best_model
+    return scores
