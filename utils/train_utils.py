@@ -433,9 +433,9 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
             'Validation Q7 F1 Score':scores['f1'][6]
         }, step=epoch_i)
 
-        if np.mean(scores['p_score']) > best_prec:
+        if np.mean(scores['f1']) > best_prec:
             best_model = copy.deepcopy(nmodel)
-            best_prec = np.mean(scores['p_score'])
+            best_prec = np.mean(scores['f1'])
 
             # Save model to wandb
             # wandb.save('checkpoints_best_val.pt')

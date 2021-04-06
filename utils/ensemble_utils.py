@@ -106,8 +106,8 @@ def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttex
         model = model.to(device)
 
         # Get weights
-        scores = evaluate_model(nmodel, val_dataloader, device, return_files=False)
-        weights.append(np.mean(scores['f1']))
+        scores = evaluate_model(model, val_dataloader, device, return_files=False)
+        weights.append(scores['f1'])
 
         ypreds, y_test = bert_soft_preds(model, val_dataloader, device)
         # print(ypreds)
@@ -115,14 +115,14 @@ def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttex
         # print(ytest.shape)
         model_soft_preds.append(ypreds)
 
-    weights = np.array(weights)
-    weights = weights / np.sum(weights)
+    weights = np.array(weights) # Size (num_components, num_labels)
+    weights = weights / np.sum(weights, axis=0).reshape(1, -1)
     print("Ensemble Weights : {}\n\n\n".format(weights))
 
     for i in range(7):
-        model_soft_preds[0][i] *= weights[0]
+        model_soft_preds[0][i] *= weights[0][i]
         for j in range(1, len(model_soft_preds)):
-            model_soft_preds[0][i] += (weights[j] * model_soft_preds[j][i])
+            model_soft_preds[0][i] += (weights[j][i] * model_soft_preds[j][i])
 
     # print(model_soft_preds)
 
