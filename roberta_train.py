@@ -196,7 +196,7 @@ if args.save_model:
 		os.mkdir('bin')
 
 	torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
-    torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
+    	torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
 
 if args.save_emb==True:
 	train_emb = get_model_embeddings(model, train_dataloader, args.device)
