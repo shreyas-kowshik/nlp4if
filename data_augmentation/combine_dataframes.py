@@ -17,4 +17,4 @@ df_train_fr=pd.read_csv('augmented_datasets/aug_from_old_dataset/df_train_fr.tsv
 df_train_de=pd.read_csv('augmented_datasets/aug_from_old_dataset/df_train_de.tsv', sep='\t')
 
 df_full=pd.concat([df_train, df_train_de, df_train_es, df_train_fr], ignore_index=True)
-df_full.to_csv('augmented_datasets/final_dataset.tsv', sep='\t')
+df_full.to_csv('augmented_datasets/final_dataset.tsv', sep='\t', index=False)
