@@ -71,6 +71,7 @@ def get_dataloader_bert_type(dev_file, model_type, model_base, max_seq_len=56, b
 
 def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
     model_soft_preds = []
+    weights = []
     y_test = None
     for model_pth in os.listdir('bin'):
         if not wdbr in model_pth:
@@ -103,15 +104,115 @@ def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttex
                 exit(1)
         
         model = model.to(device)
+
+        # Get weights
+        scores = evaluate_model(nmodel, val_dataloader, device, return_files=False)
+        weights.append(np.mean(scores['f1']))
+
         ypreds, y_test = bert_soft_preds(model, val_dataloader, device)
         # print(ypreds)
         # print(ypreds[0].shape)
         # print(ytest.shape)
         model_soft_preds.append(ypreds)
 
+    weights = np.array(weights)
+    weights = weights / np.sum(weights)
+    print("Ensemble Weights : {}\n\n\n".format(weights))
+
     for i in range(7):
+        model_soft_preds[0][i] *= weights[0]
         for j in range(1, len(model_soft_preds)):
-            model_soft_preds[0][i] += model_soft_preds[j][i]
+            model_soft_preds[0][i] += (weights[j] * model_soft_preds[j][i])
+
+    # print(model_soft_preds)
+
+    model_soft_preds = model_soft_preds[0]
+    for i in range(len(model_soft_preds)):
+        model_soft_preds[i] = np.argmax(model_soft_preds[i], axis=1).reshape(-1, 1)
+    y_preds = np.hstack(model_soft_preds)
+
+    print(y_preds.shape)
+    print(y_test.shape)
+
+    y_preds = inverse_transform(y_preds)
+    y_test = inverse_transform(y_test)
+
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    np.savetxt("tmp/preds_tem.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt("tmp/gt_tem.tsv", y_test, delimiter="\t",fmt='%s')
+
+    truths, submitted = read_gold_and_pred('tmp/gt_tem.tsv', 'tmp/preds_tem.tsv')
+
+    scores = {
+        'acc': [],
+        'f1': [],
+        'p_score': [],
+        'r_score': [],
+    }
+    all_classes = ["yes", "no"]
+    for i in range(7):
+        acc, f1, p_score, r_score = evaluate(truths[i+1], submitted[i+1], all_classes)
+        for metric in scores:
+            scores[metric].append(eval(metric))
+
+    return scores
+
+def get_predictions_tsv(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
+    model_soft_preds = []
+    weights = []
+    y_test = None
+    for model_pth in os.listdir('bin'):
+        if not wdbr in model_pth:
+            continue
+
+        ckpt = torch.load(os.path.join('bin', model_pth))
+
+        val_dataloader=None
+        if 'roberta' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-large')
+                model = ROBERTaAttention(freeze_bert_params=False, base='roberta-large')
+                model.load_state_dict(ckpt)
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-base')
+                model = ROBERTaAttentionClasswise(freeze_bert_params=False, base='roberta-base')
+                model.load_state_dict(ckpt)
+        elif 'bert' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-large-cased')
+                model = BERTAttention(freeze_bert_params=False, base='bert-large-cased')
+                model.load_state_dict(ckpt)
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-base-uncased')
+                model = BERTAttentionClasswise(freeze_bert_params=False, base='bert-base-uncased')
+                model.load_state_dict(ckpt)
+        else:
+            if not use_glove_fasttext:
+                print("Error, model not understood in evluation")
+                exit(1)
+        
+        model = model.to(device)
+
+        # Get weights
+        scores = evaluate_model(nmodel, val_dataloader, device, return_files=False)
+        weights.append(np.mean(scores['f1']))
+
+        ypreds, y_test = bert_soft_preds(model, val_dataloader, device)
+        # print(ypreds)
+        # print(ypreds[0].shape)
+        # print(ytest.shape)
+        model_soft_preds.append(ypreds)
+
+    weights = np.array(weights)
+    weights = weights / np.sum(weights)
+    print("Ensemble Weights : {}\n\n\n".format(weights))
+
+    for i in range(7):
+        model_soft_preds[0][i] *= weights[0]
+        for j in range(1, len(model_soft_preds)):
+            model_soft_preds[0][i] += (weights[j] * model_soft_preds[j][i])
 
     # print(model_soft_preds)
 

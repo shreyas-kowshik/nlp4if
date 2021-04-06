@@ -188,6 +188,15 @@ def process_data(data_path):
         
     return np.array(sentences), labels, les
 
+def process_test_data(data_path):
+    data = pd.read_csv(data_path, sep='\t')
+    print("Dropping rows that contain nan in Q6_label or Q7_label")
+    data=data.dropna(subset=['q7_label', 'q6_label'])  
+    data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
+    sentences = data["tweet_text"]
+        
+    return np.array(sentences)
+
 def tokenize(sentences, use_type_tokens = True, padding = True, max_len = 25, bert_base='bert-base-uncased'):
     tokenizer = BertTokenizer.from_pretrained(bert_base)
     input_ids = []

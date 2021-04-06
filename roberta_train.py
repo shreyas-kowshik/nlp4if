@@ -28,7 +28,7 @@ torch.cuda.manual_seed_all(RANDOM_SEED)
 
 #### Parse Arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v3/v3/",
+parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v3/v3_augmented/",
                     help="Expects a path to training folder")
 parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v3/v3/",
                     help="Expects a path to dev folder")
@@ -196,6 +196,7 @@ if args.save_model:
 		os.mkdir('bin')
 
 	torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
+    torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
 
 if args.save_emb==True:
 	train_emb = get_model_embeddings(model, train_dataloader, args.device)
