@@ -145,9 +145,9 @@ elif args.model_to_use=="bert_train_emb":
 elif args.model_to_use=="bert_attn":
     model = BERTAttention(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 elif args.model_to_use=="bert_attn_classwise":
-	model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
+    model = BERTAttentionClasswise(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 elif args.model_to_use=="bert_attn_classwise_weighted":
-	model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
+    model = BERTAttentionClasswiseWeighted(freeze_bert_params=False, dropout_prob=args.dropout_prob, base=args.base)
 model = model.to(device)
 
 if args.log_to_wnb==True:
@@ -167,7 +167,7 @@ elif args.model_to_use=="bert_attn":
     model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 else: # default behavior
-	model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
+    model = train_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
 ### Print Stats ###
@@ -198,14 +198,14 @@ if args.log_to_wnb==True:
 
 # Save model
 if args.save_model:
-	if not os.path.exists('bin'):
-		os.mkdir('bin')
+    if not os.path.exists('bin'):
+        os.mkdir('bin')
 
-	torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
-    	torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
+    torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
+    torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
 
 if args.save_emb==True:
-	train_emb = get_model_embeddings(model, train_dataloader, args.device)
-	val_emb = get_model_embeddings(model, val_dataloader, args.device)
-	np.save(os.path.join(wandb.run.dir, "train_emb.npy"), train_emb)
-	np.save(os.path.join(wandb.run.dir, "val_emb.npy"), val_emb)
+    train_emb = get_model_embeddings(model, train_dataloader, args.device)
+    val_emb = get_model_embeddings(model, val_dataloader, args.device)
+    np.save(os.path.join(wandb.run.dir, "train_emb.npy"), train_emb)
+    np.save(os.path.join(wandb.run.dir, "val_emb.npy"), val_emb)
