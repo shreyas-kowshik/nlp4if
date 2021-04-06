@@ -96,6 +96,7 @@ TRAIN_FILE=args.data_train_path+"covid19_disinfo_binary_english_train.tsv"
 DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 
 df_train = pd.read_csv(TRAIN_FILE, sep='\t')
+col_order = df_train.columns.tolist()
 
 target_model_name = 'Helsinki-NLP/opus-mt-en-ROMANCE'
 target_tokenizer = MarianTokenizer.from_pretrained(target_model_name)
@@ -107,24 +108,30 @@ en_tokenizer = MarianTokenizer.from_pretrained(en_model_name)
 en_model = MarianMTModel.from_pretrained(en_model_name)
 print('en model ready')
 
-
 augmented_dict = aug_sentence_batch_es(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_es = copy.deepcopy(df_train)
 df_train_es.drop('tweet_text', inplace=True, axis=1)
 df_train_es['tweet_text']=augmented_dict['es']
+df_train_es = df_train_es[col_order]
 df_train_es.to_csv('augmented_datasets/df_train_es.tsv', sep='\t', index=False)
 
+'''
 augmented_dict = aug_sentence_batch_fr(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_fr = copy.deepcopy(df_train)
 df_train_fr.drop('tweet_text', inplace=True, axis=1)
 df_train_fr['tweet_text']=augmented_dict['fr']
+df_train_fr = df_train_fr[col_order]
 df_train_fr.to_csv('augmented_datasets/df_train_fr.tsv', sep='\t', index=False)
+'''
 
+'''
 augmented_dict = aug_sentence_batch_de(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_de = copy.deepcopy(df_train)
 df_train_de.drop('tweet_text', inplace=True, axis=1)
 df_train_de['tweet_text']=augmented_dict['de']
+df_train_de = df_train_de[col_order]
 df_train_de.to_csv('augmented_datasets/df_train_de.tsv', sep='\t', index=False)
+'''
