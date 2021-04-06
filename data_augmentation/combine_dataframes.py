@@ -12,9 +12,9 @@ TRAIN_FILE=args.data_train_path+"covid19_disinfo_binary_english_train.tsv"
 DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 
 df_train = pd.read_csv(TRAIN_FILE, sep='\t')
-df_train_es=pd.read_csv('augmented_datasets/aug_from_old_dataset/df_train_es.tsv', sep='\t')
-df_train_fr=pd.read_csv('augmented_datasets/aug_from_old_dataset/df_train_fr.tsv', sep='\t')
-df_train_de=pd.read_csv('augmented_datasets/aug_from_old_dataset/df_train_de.tsv', sep='\t')
+df_train_es=pd.read_csv('augmented_datasets/df_train_es.tsv', sep='\t')
+df_train_fr=pd.read_csv('augmented_datasets/df_train_fr.tsv', sep='\t')
+df_train_de=pd.read_csv('augmented_datasets/df_train_de.tsv', sep='\t')
 
 df_full=pd.concat([df_train, df_train_de, df_train_es, df_train_fr], ignore_index=True)
 df_full.to_csv('augmented_datasets/final_dataset.tsv', sep='\t', index=False)
