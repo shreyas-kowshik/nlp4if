@@ -86,6 +86,7 @@ dev = TabularDataset(
     skip_header=True,
     fields=datafields)
 
+# TEXT.build_vocab(train, max_size=20000, min_freq=5, vectors=['glove.840B.300d', 'fasttext.en.300d'])
 TEXT.build_vocab(train, max_size=20000, min_freq=5, vectors='glove.840B.300d')
 
 random.seed(1234)
