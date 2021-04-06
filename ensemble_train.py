@@ -13,7 +13,7 @@ parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
 args = parser.parse_args()
 
 EPOCHS=args.epochs
-DEV_FILE='data/english/v2/v2/covid19_disinfo_binary_english_dev_input.tsv'
+DEV_FILE='data/english/v3/v3/covid19_disinfo_binary_english_dev_input.tsv'
 
 # Train BERT
 WANDB_TRIAL_NAME=args.wandb_run+'_bert_large'

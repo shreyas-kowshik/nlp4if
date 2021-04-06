@@ -20,9 +20,9 @@ from utils.train_utils import *
 
 #### Parse Arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v1/v1/",
+parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v3/v3/",
                     help="Expects a path to training folder")
-parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v2/v2/",
+parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v3/v3/",
                     help="Expects a path to dev folder")
 parser.add_argument("-device", "--device", type=str, default="cuda",
                     help="Device")

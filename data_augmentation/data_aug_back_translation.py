@@ -7,9 +7,9 @@ import time
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-dtp", "--data_train_path", type=str, default="../data/english/v1/v1/",
+parser.add_argument("-dtp", "--data_train_path", type=str, default="../data/english/v3/v3/",
                     help="Expects a path to training folder")
-parser.add_argument("-ddp", "--data_dev_path", type=str, default="../data/english/v2/v2/",
+parser.add_argument("-ddp", "--data_dev_path", type=str, default="../data/english/v3/v3/",
                     help="Expects a path to dev folder")
 args = parser.parse_args()
 
@@ -108,23 +108,19 @@ en_model = MarianMTModel.from_pretrained(en_model_name)
 print('en model ready')
 
 
-'''
 augmented_dict = aug_sentence_batch_es(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_es = copy.deepcopy(df_train)
 df_train_es.drop('tweet_text', inplace=True, axis=1)
 df_train_es['tweet_text']=augmented_dict['es']
 df_train_es.to_csv('augmented_datasets/df_train_es.tsv', sep='\t', index=False)
-'''
 
-'''
 augmented_dict = aug_sentence_batch_fr(df_train['tweet_text'].to_list())
 print(augmented_dict)
 df_train_fr = copy.deepcopy(df_train)
 df_train_fr.drop('tweet_text', inplace=True, axis=1)
 df_train_fr['tweet_text']=augmented_dict['fr']
 df_train_fr.to_csv('augmented_datasets/df_train_fr.tsv', sep='\t', index=False)
-'''
 
 augmented_dict = aug_sentence_batch_de(df_train['tweet_text'].to_list())
 print(augmented_dict)
