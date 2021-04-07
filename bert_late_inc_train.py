@@ -29,7 +29,7 @@ torch.cuda.manual_seed_all(RANDOM_SEED)
 
 #### Parse Arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v3/v3/",
+parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english/v3/v3_augmented/",
                     help="Expects a path to training folder")
 parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v3/v3/",
                     help="Expects a path to dev folder")
