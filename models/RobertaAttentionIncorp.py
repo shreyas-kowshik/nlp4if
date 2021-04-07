@@ -4,7 +4,7 @@ from transformers import AutoModel, RobertaTokenizer, RobertaModel
 import torch
 import math
 import torch.nn.functional as F
-from RobertAttentionClasswise import *
+from models.RobertAttentionClasswise import *
 
 
 class RobertaAttentionIncorp(nn.Module):
