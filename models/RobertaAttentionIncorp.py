@@ -30,7 +30,7 @@ class RobertaAttentionIncorp(nn.Module):
       self.dropout7 = nn.Dropout(dropout_prob)
 
       embedding_dim=768
-      if base=='roberta-base':
+      if base=='roberta-large':
         embedding_dim=1024
 
       self.fc1 = LinearBlock(embedding_dim,512)
