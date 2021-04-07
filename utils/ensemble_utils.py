@@ -44,6 +44,28 @@ def bert_soft_preds(nmodel, test_dataloader, device):
     y_test = np.vstack(y_test)
     return y_preds, y_test # y_preds : 7 elements, with each (N,num_classes) for each question, y_test is (N,7)
 
+def bert_soft_preds_test(nmodel, test_dataloader, device):
+    nmodel.eval()
+    y_preds = []
+    y_test = []
+    init=True
+
+    for i, batch in enumerate(test_dataloader):
+        batch = [r.to(device) for r in batch]
+        inc_feats = None
+        sent_id, mask = batch
+
+        with torch.no_grad():
+            ypreds = nmodel(sent_id, mask) # 7 outputs here
+            for i, class_preds in enumerate(ypreds):
+                if init:
+                    y_preds.append(class_preds.cpu().numpy())
+                else:
+                    y_preds[i] = np.vstack([y_preds[i], class_preds.cpu().numpy()])
+            init=False
+
+    return y_preds # y_preds : 7 elements, with each (N,num_classes) for each question, y_test is (N,7)
+
 def get_dataloader_bert_type(dev_file, model_type, model_base, max_seq_len=56, batch_size=32):
     DEV_FILE=dev_file
     sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
@@ -131,7 +153,7 @@ def eval_ensemble_test(MODEL_PATHS, test_file, dev_file, device=torch.device('cu
         scores = evaluate_model(model, val_dataloader, device, return_files=False)
         weights.append(scores['f1'])
 
-        ypreds, y_test = bert_soft_preds(model, test_dataloader, device)
+        ypreds = bert_soft_preds_test(model, test_dataloader, device)
         # print(ypreds)
         # print(ypreds[0].shape)
         # print(ytest.shape)
@@ -154,16 +176,13 @@ def eval_ensemble_test(MODEL_PATHS, test_file, dev_file, device=torch.device('cu
     y_preds = np.hstack(model_soft_preds)
 
     print(y_preds.shape)
-    print(y_test.shape)
 
     y_preds = inverse_transform(y_preds)
-    y_test = inverse_transform(y_test)
 
     if not os.path.exists('tmp'):
         os.mkdir('tmp')
 
     np.savetxt("tmp/preds_tem_TEST.tsv", y_preds, delimiter="\t",fmt='%s')
-    np.savetxt("tmp/gt_tem_TEST.tsv", y_test, delimiter="\t",fmt='%s')
 
 
 def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):

@@ -30,6 +30,13 @@ demoji.download_codes()
 # specify GPU
 # device = torch.device("cuda")
 
+def process_data_test(data_path):
+    data = pd.read_csv(data_path, sep='\t')
+    data["text"] = data["text"].apply(lambda x:unidecode(x))  
+    print('!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE url address to URL !!!!!!!!!!!!!!!!!!!!!!!')
+    sentences = data["text"]
+    return np.array(sentences)
+
 def preprocess_cleaning(df):
     '''
     Convert non-ascii to ascii
