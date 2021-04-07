@@ -207,11 +207,8 @@ if args.log_to_wnb==True:
     wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
     wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
 
-    # Save model to wandb
-    # wandb.save('/mnt/checkpoints/final_model.pt', base_path='/mnt/checkpoints')
-    # model.save(os.path.join(wandb.run.dir, "final_model.pt"))
-    # wandb.save('checkpoints_final_model.pt')
-    # torch.save(model.state_dict(), os.path.join(wandb.run.dir, "final_epoch_model.pth"))
+    torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
+    torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
 
 if args.save_emb==True:
 	train_emb = get_model_embeddings(model, train_dataloader, args.device)
