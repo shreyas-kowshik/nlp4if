@@ -134,9 +134,11 @@ def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_
 
         if i in [1, 2, 3, 4]:
             class_count = len(np.where(x == 'nan')[0])
-            wts.append(class_count / (1.0 * len(x)))
+            # wts.append(class_count / (1.0 * len(x)))
+            wts.append(0.01) # Small weight for nans
 
         wts = np.array(wts)
+        wts = wts / np.sum(wts)
         WTS.append(wts)
         np.save(os.path.join('data/class_weights', 'q' + str(i+1) + '.npy'), wts)
     
