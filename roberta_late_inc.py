@@ -14,8 +14,8 @@ import transformers
 from transformers import AutoModel, BertTokenizerFast, BertTokenizer
 # Model Imports #
 from models.bert_basic import *
-from models.BertAttentionClasswise import *
-from models.BertAttentionIncorp import *
+from models.RobertAttentionClasswise import *
+from models.RobertaAttentionIncorp import *
 # Utils Imports #
 from utils.preprocess import *
 from utils.train_utils import *
@@ -33,9 +33,9 @@ parser.add_argument("-dtp", "--data_train_path", type=str, default="data/english
                     help="Expects a path to training folder")
 parser.add_argument("-ddp", "--data_dev_path", type=str, default="data/english/v3/v3/",
                     help="Expects a path to dev folder")
-parser.add_argument("-model", "--model_to_use", type=str, default="bert_attention_incorp",
+parser.add_argument("-model", "--model_to_use", type=str, default="roberta_attention_incorp",
                     help="Which model to use")
-parser.add_argument("-bbase", "--bert_base", type=str, default="bert-large-cased",
+parser.add_argument("-bbase", "--base", type=str, default="roberta-base",
                     help="Which bert base model to use")
 parser.add_argument("-msl", "--max_seq_len", type=int, default=56,
                     help="Maximum sequence length")
@@ -89,9 +89,9 @@ generate_class_weights(TRAIN_FILE)
 ########################
 
 ### Tokenize Data ###
-tokens_train = bert_tokenize(train_x, args.max_seq_len, base=args.bert_base)
-tokens_val = bert_tokenize(val_x, args.max_seq_len, base=args.bert_base)
-tokens_dev = bert_tokenize(sentences_dev, args.max_seq_len, base=args.bert_base)
+tokens_train = roberta_tokenize(train_x, args.max_seq_len, base=args.base)
+tokens_val = roberta_tokenize(val_x, args.max_seq_len, base=args.base)
+tokens_dev = roberta_tokenize(sentences_dev, args.max_seq_len, base=args.base)
 
 # tokens_train = tokenize(train_x, max_len=args.max_seq_len, bert_base=args.bert_base)
 # tokens_val = tokenize(val_x, max_len=args.max_seq_len, bert_base=args.bert_base)
@@ -161,8 +161,8 @@ dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=args.bat
 ################################
 
 ### Model Preparation ###
-if args.model_to_use=="bert_attention_incorp":
-    model = BERTAttentionIncorp(incorp_dim=X_incorp_train.shape[1], freeze_bert_params=False, bert_base=args.bert_base, dropout_prob=args.dropout_prob)
+if args.model_to_use=="roberta_attention_incorp":
+    model = RobertaAttentionIncorp(incorp_dim=X_incorp_train.shape[1], freeze_bert_params=False, base=args.base, dropout_prob=args.dropout_prob)
 else:
     print("Error : Model not valid")
     exit(0)
@@ -176,7 +176,7 @@ model = model.to(device)
 #########################
 
 ### Train ###
-if args.model_to_use=="bert_attention_incorp":
+if args.model_to_use=="roberta_attention_incorp":
     model = train_inc_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
