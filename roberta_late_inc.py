@@ -176,7 +176,7 @@ model = model.to(device)
 #########################
 
 ### Train ###
-if args.model_to_use=="bert_attention_incorp":
+if args.model_to_use=="roberta_attention_incorp":
     model = train_inc_v2(model, train_dataloader, val_dataloader, args.device, args.epochs, 
                 lr1=args.learning_rate, lr2=args.learning_rate_embeddings, loss_type=args.loss_type)
 
