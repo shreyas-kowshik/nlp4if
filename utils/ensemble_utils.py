@@ -68,6 +68,103 @@ def get_dataloader_bert_type(dev_file, model_type, model_base, max_seq_len=56, b
 
     return dev_dataloader
 
+def get_dataloader_bert_type_test(dev_file, model_type, model_base, max_seq_len=56, batch_size=32):
+    DEV_FILE=dev_file
+    sentences_dev = process_data_test(DEV_FILE)
+    val_x = sentences_dev
+
+    ### Tokenize Data ###
+    if model_type=="bert":
+        tokens_dev = bert_tokenize(sentences_dev, max_seq_len, model_base)
+    else:
+        tokens_dev = roberta_tokenize(sentences_dev, max_seq_len, model_base)
+    #####################
+
+    ### Dataloader Preparation ###
+    dev_seq = torch.tensor(tokens_dev['input_ids'])
+    dev_mask = torch.tensor(tokens_dev['attention_mask'])
+
+    dev_data = TensorDataset(dev_seq, dev_mask)
+    dev_sampler = SequentialSampler(dev_data)
+    dev_dataloader = DataLoader(dev_data, sampler = dev_sampler, batch_size=batch_size)
+
+    return dev_dataloader
+
+def eval_ensemble_test(MODEL_PATHS, test_file, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
+    model_soft_preds = []
+    weights = []
+    y_test = None
+    for model_pth in MODEL_PATHS:
+        ckpt = torch.load(model_pth)
+
+        val_dataloader=None
+        if 'roberta' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-large')
+                test_dataloader = get_dataloader_bert_type_test(test_file, 'roberta', 'roberta-large')
+                model = ROBERTaAttention(freeze_bert_params=False, base='roberta-large')
+                model.load_state_dict(ckpt)
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'roberta', 'roberta-base')
+                test_dataloader = get_dataloader_bert_type_test(test_file, 'roberta', 'roberta-base')
+                model = ROBERTaAttentionClasswise(freeze_bert_params=False, base='roberta-base')
+                model.load_state_dict(ckpt)
+        elif 'bert' in model_pth:
+            if 'large' in model_pth:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-large-cased')
+                test_dataloader = get_dataloader_bert_type_test(test_file, 'bert', 'bert-large-cased')
+                model = BERTAttention(freeze_bert_params=False, base='bert-large-cased')
+                model.load_state_dict(ckpt)
+            else:
+                val_dataloader = get_dataloader_bert_type(dev_file, 'bert', 'bert-base-uncased')
+                test_dataloader = get_dataloader_bert_type_test(test_file, 'bert', 'bert-base-uncased')
+                model = BERTAttentionClasswise(freeze_bert_params=False, base='bert-base-uncased')
+                model.load_state_dict(ckpt)
+        else:
+            if not use_glove_fasttext:
+                print("Error, model not understood in evluation")
+                exit(1)
+        
+        model = model.to(device)
+
+        # Get weights
+        scores = evaluate_model(model, val_dataloader, device, return_files=False)
+        weights.append(scores['f1'])
+
+        ypreds, y_test = bert_soft_preds(model, test_dataloader, device)
+        # print(ypreds)
+        # print(ypreds[0].shape)
+        # print(ytest.shape)
+        model_soft_preds.append(ypreds)
+
+    weights = np.array(weights) # Size (num_components, num_labels)
+    weights = weights / np.sum(weights, axis=0).reshape(1, -1)
+    print("Ensemble Weights : {}\n\n\n".format(weights))
+
+    for i in range(7):
+        model_soft_preds[0][i] *= weights[0][i]
+        for j in range(1, len(model_soft_preds)):
+            model_soft_preds[0][i] += (weights[j][i] * model_soft_preds[j][i])
+
+    # print(model_soft_preds)
+
+    model_soft_preds = model_soft_preds[0]
+    for i in range(len(model_soft_preds)):
+        model_soft_preds[i] = np.argmax(model_soft_preds[i], axis=1).reshape(-1, 1)
+    y_preds = np.hstack(model_soft_preds)
+
+    print(y_preds.shape)
+    print(y_test.shape)
+
+    y_preds = inverse_transform(y_preds)
+    y_test = inverse_transform(y_test)
+
+    if not os.path.exists('tmp'):
+        os.mkdir('tmp')
+
+    np.savetxt("tmp/preds_tem_TEST.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt("tmp/gt_tem_TEST.tsv", y_test, delimiter="\t",fmt='%s')
+
 
 def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
     model_soft_preds = []
