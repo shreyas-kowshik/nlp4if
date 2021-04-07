@@ -127,10 +127,15 @@ def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_
     for i in range(7):
         x = np.array(tem['q' + str(i+1) + '_label'])
         wts = []
-        class_count = len(np.where(x == 'no')[0])
-        wts.append(1.0 / (class_count / (1.0 * len(x)) + 1.0))
-        class_count = len(np.where(x == 'yes')[0])
-        wts.append(1.0 / (class_count / (1.0 * len(x)) + 1.0))
+        y_count = len(np.where(x == 'yes')[0])
+        n_count = len(np.where(x == 'no')[0])
+        n_s = y_count + n_count
+        wts.append(n_s / (2.0 * n_count))
+        wts.append(n_s / (2.0 * y_count))
+        # class_count = len(np.where(x == 'no')[0])
+        # wts.append(1.0 / (class_count / (1.0 * len(x)) + 1.0))
+        # class_count = len(np.where(x == 'yes')[0])
+        # wts.append(1.0 / (class_count / (1.0 * len(x)) + 1.0))
 
         if i in [1, 2, 3, 4]:
             class_count = len(np.where(x == 'nan')[0])
@@ -138,7 +143,7 @@ def generate_class_weights(data_path='data/english/v1/v1/covid19_disinfo_binary_
             wts.append(np.min([wts[0], wts[1]])/10.0) # Small weight for nans
 
         wts = np.array(wts)
-        wts = wts / np.sum(wts)
+        # wts = wts / np.sum(wts)
         WTS.append(wts)
         np.save(os.path.join('data/class_weights', 'q' + str(i+1) + '.npy'), wts)
     
