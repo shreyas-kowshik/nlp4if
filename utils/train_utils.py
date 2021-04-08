@@ -585,8 +585,9 @@ def train_inc_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4
     for i in range(7):
         wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
 
-    for i in range(7):
-        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+    print("Weights Used for Training :")
+    print(wts)
+    print("\n\n\n")
 
     best_model = copy.deepcopy(nmodel)
     best_prec = 0
