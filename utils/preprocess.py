@@ -33,7 +33,7 @@ demoji.download_codes()
 def process_data_test(data_path):
     data = pd.read_csv(data_path, sep='\t')
     data["text"] = data["text"].apply(lambda x:unidecode(x))  
-    print('!!!!!!!!!!!!!!!!!!!!!!!!!!! CHANGE url address to URL !!!!!!!!!!!!!!!!!!!!!!!')
+    data["text"] = data["text"].apply(lambda x:re.sub(r'http\S+', "URL", x))
     sentences = data["text"]
     return np.array(sentences)
 
