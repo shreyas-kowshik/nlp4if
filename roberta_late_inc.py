@@ -207,7 +207,7 @@ if args.log_to_wnb==True:
     wandb.run.summary['Validation Q6 F1 Precision'] = scores['p_score'][5]
     wandb.run.summary['Validation Q7 F1 Precision'] = scores['p_score'][6]
 
-    torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
+    # torch.save(model.state_dict(), os.path.join('bin', args.wandb_run + '.pt'))
     torch.save(model.state_dict(), os.path.join(wandb.run.dir, args.wandb_run + '.pt'))
 
 if args.save_emb==True:
