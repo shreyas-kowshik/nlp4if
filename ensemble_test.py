@@ -39,3 +39,4 @@ if PRED_SAVE_NAME is None:
 
 print('File will be saved in test_preds/'+PRED_SAVE_NAME)
 eval_ensemble_test(MODEL_PATHS, TEST_FILE, DEV_FILE, PRED_SAVE_NAME, device=torch.device('cuda'), use_glove_fasttext=False)
+os.system(f'python format_checker/main.py -p {"test_preds/"+PRED_SAVE_NAME}')
