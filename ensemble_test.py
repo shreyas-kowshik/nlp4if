@@ -11,8 +11,11 @@ parser.add_argument("-dtp", "--data_test_path", type=str, default="data/english/
                     help="Expects a path to training folder")
 parser.add_argument("-bs", "--batch_size", type=int, default=32,
                     help="Batch Size")
+parser.add_argument("-wdbr", "--wandb_run", type=str, required=True,
+                    help="Wandb Run Name")
 args = parser.parse_args()
 
+wandb.init(name=args.wandb_run, project='nlp_runs', entity='nlp4if')
 TEST_FILE = args.data_test_path+"covid19_disinfo_binary_english_test_input.tsv"
 DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
 

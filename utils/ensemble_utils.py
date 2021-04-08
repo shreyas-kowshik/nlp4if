@@ -183,6 +183,7 @@ def eval_ensemble_test(MODEL_PATHS, test_file, dev_file, device=torch.device('cu
         os.mkdir('tmp')
 
     np.savetxt("tmp/preds_tem_TEST.tsv", y_preds, delimiter="\t",fmt='%s')
+    np.savetxt(os.path.join(wandb.run.dir, "tmp/preds_tem_TEST.tsv"), val_preds, delimiter="\t",fmt='%s')
 
 
 def eval_ensemble(wdbr, dev_file, device=torch.device('cuda'), use_glove_fasttext=False):
