@@ -15,7 +15,7 @@ ex: args.fp = "nlp4if/nlp_runs/2we87c77", args.fn="ensemble_aug_inverse_weights_
 
 if not os.path.isfile(args.file_name):
     api = wandb.Api()
-    run = api.run(args.mp)
+    run = api.run(args.file_path)
     run.file(args.file_name).download()
 else:
     print('File already exists')
