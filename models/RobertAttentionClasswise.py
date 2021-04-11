@@ -5,7 +5,7 @@ import torch
 import math
 import torch.nn.functional as F
 
-def attention(q, k, v, d_k, mask=None, dropout=None):
+def attention(q, k, v, d_k, mask=None, dropout=None, ret_scores=False):
     scores = torch.matmul(q, k.transpose(-2, -1)) /  math.sqrt(d_k)
     if mask is not None:
         mask = mask.unsqueeze(1)
@@ -20,7 +20,11 @@ def attention(q, k, v, d_k, mask=None, dropout=None):
     #     scores = dropout(scores)
     
     output = torch.matmul(scores, v)
-    return output
+
+    if ret_scores:
+      return output, scores
+    else:
+      return output
 
 class LinearBlock(nn.Module):
   def __init__(self, in_dim, out_dim, use_bn=True):
@@ -59,7 +63,7 @@ class MultiHeadAttention(nn.Module):
     # size of each : (Batch_Size, Seq_len, Input Dim)
 
     # (32,8,3*512)
-    def forward(self, q, k, v, mask=None):
+    def forward(self, q, k, v, mask=None, get_attn_wt=False):
         bs = q.size(0)
         
         # perform linear operation and split into h heads
@@ -83,7 +87,11 @@ class MultiHeadAttention(nn.Module):
         if self.debug:
           print("After transpose Q, K, V : {}, {}, {}".format(q.shape, k.shape, v.shape))
 
-        scores = attention(q, k, v, self.d_k, mask, self.dropout)
+        if get_attn_wt:
+          scores, attn_wt = attention(q, k, v, self.d_k, mask, self.dropout, ret_scores=get_attn_wt)
+          return scores, attn_wt
+        else:
+          scores = attention(q, k, v, self.d_k, mask, self.dropout, ret_scores=get_attn_wt)
 
         if self.debug:
           print("Scores : {}".format(scores.shape))
@@ -168,7 +176,7 @@ class ROBERTaAttentionClasswise(nn.Module):
 
 
     #define the forward pass
-    def forward(self, sent_id, mask, get_embedding=False):
+    def forward(self, sent_id, mask, get_embedding=False, get_attn_wt=False):
       # Bert
       bert_output = self.embeddings(sent_id, attention_mask=mask)[1]
 
@@ -219,13 +227,24 @@ class ROBERTaAttentionClasswise(nn.Module):
       x7 = torch.cat(self.num_heads*[x7], 1).unsqueeze(1)
 
       attn_cat_inp = torch.cat([x1, x2, x3, x4, x5, x6, x7], 1)
-      attn_out1 = self.attn1(x1, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out2 = self.attn2(x2, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out3 = self.attn3(x3, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out4 = self.attn4(x4, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out5 = self.attn5(x5, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out6 = self.attn6(x6, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
-      attn_out7 = self.attn7(x7, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+
+      if get_attn_wt:
+        attn_out1, attn_wt1 = self.attn1(x1, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out2, attn_wt2 = self.attn2(x2, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out3, attn_wt3 = self.attn3(x3, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out4, attn_wt4 = self.attn4(x4, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out5, attn_wt5 = self.attn5(x5, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out6, attn_wt6 = self.attn6(x6, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out7, attn_wt7 = self.attn7(x7, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        return [attn_wt1, attn_wt2, attn_wt3, attn_wt4, attn_wt5, attn_wt6, attn_wt7]
+      else:
+        attn_out1 = self.attn1(x1, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out2 = self.attn2(x2, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out3 = self.attn3(x3, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out4 = self.attn4(x4, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out5 = self.attn5(x5, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out6 = self.attn6(x6, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
+        attn_out7 = self.attn7(x7, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)
 
       # print(attn_inp.shape)
 
