@@ -11,7 +11,9 @@ def attention(q, k, v, d_k, mask=None, dropout=None, ret_scores=False):
         mask = mask.unsqueeze(1)
         scores = scores.masked_fill(mask == 0, -1e9)
 
+    print('Scores Before {}'.format(scores.shape))
     scores = F.softmax(scores, dim=-1)
+    print('Scores after {}'.format(scores.shape))
 
     # This is a seq_lenxseq_len matrix, shape : (bs, heads, q_seq_len, k_seq_len)
     # print("Scores : {}".format(scores.shape))
@@ -229,13 +231,13 @@ class ROBERTaAttentionClasswise(nn.Module):
       attn_cat_inp = torch.cat([x1, x2, x3, x4, x5, x6, x7], 1)
 
       if get_attn_wt:
-        attn_out1, attn_wt1 = self.attn1(x1, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out2, attn_wt2 = self.attn2(x2, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out3, attn_wt3 = self.attn3(x3, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out4, attn_wt4 = self.attn4(x4, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out5, attn_wt5 = self.attn5(x5, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out6, attn_wt6 = self.attn6(x6, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
-        attn_out7, attn_wt7 = self.attn7(x7, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt).reshape(-1, self.num_heads * 256)
+        attn_out1, attn_wt1 = self.attn1(x1, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out2, attn_wt2 = self.attn2(x2, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out3, attn_wt3 = self.attn3(x3, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out4, attn_wt4 = self.attn4(x4, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out5, attn_wt5 = self.attn5(x5, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out6, attn_wt6 = self.attn6(x6, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
+        attn_out7, attn_wt7 = self.attn7(x7, attn_cat_inp, attn_cat_inp, get_attn_wt=get_attn_wt)
         return [attn_wt1, attn_wt2, attn_wt3, attn_wt4, attn_wt5, attn_wt6, attn_wt7]
       else:
         attn_out1 = self.attn1(x1, attn_cat_inp, attn_cat_inp).reshape(-1, self.num_heads * 256)

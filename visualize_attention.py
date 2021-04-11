@@ -48,7 +48,12 @@ for i, batch in enumerate(val_dataloader):
         attn_wts = model(sent_id, mask, get_attn_wt=True) # 7 outputs here
 
     attn_wts = [a.cpu().numpy() for a in attn_wts]
-    print(attn_wts.shape)
+    for attn_wt in attn_wts:
+        print(attn_wt.shape)
+        print(attn_wt[0, 0, 0, :])
+        print(np.sum(attn_wt[0, 0, 0, :]))
+    
+    print('-----')
 
 
 
