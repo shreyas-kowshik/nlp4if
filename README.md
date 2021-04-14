@@ -22,7 +22,7 @@ cd nlp4if
 bash setup.sh
 
 [Run this command]
-roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr ensemble_aug2_32_bs2_roberta_large -model roberta_attn --base roberta-large --save_model True
+roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr ensemble_aug_inverse_weights_roberta_small -model roberta_attn_classwise --base roberta-base --save_model True
 ```
 
 
@@ -35,9 +35,3 @@ wandb login
 ```
 
 Go over to the link in terminal and paste you API key. That should be it.
-
-### Running Instructions
-
-```
-python bert_train.py --epochs 100 --wandb_run [run_name]
-```
