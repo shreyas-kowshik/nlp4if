@@ -209,7 +209,7 @@ def process_bulgarian_data(data_path):
     print("Dropping rows that contain nan in Q6_label or Q7_label")
     data=data.dropna(subset=['q7_label', 'q6_label'])  
     # TODO : Check removal for not English data
-    # data["text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
+    data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
     sentences = data["tweet_text"]
     labels = np.array(data.iloc[:, 2:].fillna('nan'))
 
