@@ -22,7 +22,7 @@ cd nlp4if
 bash setup.sh
 
 [Run this command]
-roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr ensemble_aug_inverse_weights_roberta_small -model roberta_attn_classwise --base roberta-base --save_model True
+python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr ensemble_aug_inverse_weights_roberta_small -model roberta_attn_classwise --base roberta-base --save_model True
 ```
 
 

@@ -111,7 +111,7 @@ def convert_label(labels):
             labels[:, i] = np.copy(col).astype(np.int32)
     return labels
 
-def summarise_data(data_path='data/english/v1/v1/covid19_disinfo_binary_english_train.tsv'):
+def summarise_data(data_path='data/english/v3/v3/covid19_disinfo_binary_english_train.tsv'):
     data = pd.read_csv(data_path, sep='\t')
     data=data.dropna(subset=['q7_label', 'q6_label'])
     tem = data.iloc[:, 2:].fillna('nan')
@@ -170,7 +170,8 @@ def process_data(data_path):
     data = pd.read_csv(data_path, sep='\t')
     print("Dropping rows that contain nan in Q6_label or Q7_label")
     data=data.dropna(subset=['q7_label', 'q6_label'])  
-    data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
+    # TODO : Check removal for not English data
+    # data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
     sentences = data["tweet_text"]
     labels = np.array(data.iloc[:, 2:].fillna('nan'))
 
