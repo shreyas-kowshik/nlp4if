@@ -206,12 +206,11 @@ def process_data(data_path):
 
 def process_bulgarian_data(data_path):
     data = pd.read_csv(data_path, sep='\t')
-    data = data.fillna('nan')
     print("Dropping rows that contain nan in Q6_label or Q7_label")
     data=data.dropna(subset=['q7_label', 'q6_label'])  
     # TODO : Check removal for not English data
-    data["tweet_text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
-    sentences = data["tweet_text"]
+    # data["text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
+    sentences = data["text"]
     labels = np.array(data.iloc[:, 2:].fillna('nan'))
 
     from sklearn import preprocessing
