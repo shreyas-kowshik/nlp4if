@@ -77,8 +77,8 @@ DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_bulgarian_dev_mod.tsv"
 #######################
 
 ### Data Preparation ###
-sentences, labels, train_les = process_data(TRAIN_FILE)
-sentences_dev, labels_dev, train_les_dev = process_data(DEV_FILE)
+sentences, labels, train_les = process_bulgarian_data(TRAIN_FILE)
+sentences_dev, labels_dev, train_les_dev = process_bulgarian_data(DEV_FILE)
 
 train_x = sentences
 train_y = labels
