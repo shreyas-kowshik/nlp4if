@@ -210,7 +210,7 @@ def process_bulgarian_data(data_path):
     data=data.dropna(subset=['q7_label', 'q6_label'])  
     # TODO : Check removal for not English data
     # data["text"] = data["tweet_text"].apply(lambda x:unidecode(x))  
-    sentences = data["text"]
+    sentences = data["tweet_text"]
     labels = np.array(data.iloc[:, 2:].fillna('nan'))
 
     from sklearn import preprocessing
