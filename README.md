@@ -35,3 +35,11 @@ wandb login
 ```
 
 Go over to the link in terminal and paste you API key. That should be it.
+
+### NOTES
+- Orignal Bulgarian and Arabic datasets have column name 'tweet' instead of 'tweet_text'. To maintain uniformity, Arabic and Bulgarian datasets have their column name 'tweet' replaced by 'tweet_text'. These new datasets have the following naming convention: ORIGINAL_NAME+'_mod.tsv'
+
+### To Do
+- For running models with Bulgarian and Arabic datasets, the lines ```TRAIN_FILE=args.data_train_path#+"covid19_disinfo_binary_english_train.tsv"
+DEV_FILE=args.data_dev_path#+"covid19_disinfo_binary_english_dev_input.tsv"```
+need to be replaced with corresponding file paths for Bulgarian and Arabic
