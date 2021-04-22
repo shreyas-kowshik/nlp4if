@@ -72,8 +72,8 @@ if args.log_to_wnb==True:
 ### Base Parameters ###
 device = torch.device(args.device)
 print(device)
-TRAIN_FILE=args.data_train_path+"covid19_disinfo_binary_english_train.tsv"
-DEV_FILE=args.data_dev_path+"covid19_disinfo_binary_english_dev_input.tsv"
+TRAIN_FILE=args.data_train_path#+"covid19_disinfo_binary_english_train.tsv"
+DEV_FILE=args.data_dev_path#+"covid19_disinfo_binary_english_dev_input.tsv"
 #######################
 
 ### Data Preparation ###
