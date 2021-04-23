@@ -11,9 +11,7 @@ def attention(q, k, v, d_k, mask=None, dropout=None, ret_scores=False):
         mask = mask.unsqueeze(1)
         scores = scores.masked_fill(mask == 0, -1e9)
 
-    print('Scores Before {}'.format(scores.shape))
     scores = F.softmax(scores, dim=-1)
-    print('Scores after {}'.format(scores.shape))
 
     # This is a seq_lenxseq_len matrix, shape : (bs, heads, q_seq_len, k_seq_len)
     # print("Scores : {}".format(scores.shape))
