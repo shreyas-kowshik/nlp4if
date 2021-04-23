@@ -4,7 +4,7 @@ Code for the paper <b>Multi Output Learning using Task Wise Attention for Predic
 
 This is the code for team <b>dunder_mifflin</b> bagging <b>runners-up</b> position on the English subtask of the competition.
 
-Authors : <a href="github.com/shreyas-kowshik">Shreyas Kowshik</a>, <a href="github.com/amsuhane">Ayush Suhane</a>.
+Authors : <a href="https://github.com/shreyas-kowshik/">Shreyas Kowshik</a>, <a href="https://github.com/amsuhane/">Ayush Suhane</a>.
 
 ### Overview
 
