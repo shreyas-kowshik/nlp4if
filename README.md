@@ -21,6 +21,8 @@ pip install wandb
 wandb login
 ```
 
+Now go over to the link in the terminal and paste your API key.
+
 <b>Note : </b> Before training make sure to add your `wandb` credentials as :
 
 ```
@@ -36,10 +38,3 @@ bash setup.sh
 
 python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 120 -wdbr [wandb_run_name] -model roberta_attn_classwise --base roberta-base --save_model True -dtp data/english/v3/v3_augmented/covid19_disinfo_binary_english_train.tsv -ddp data/english/v3/v3/covid19_disinfo_binary_english_dev_input.tsv
 ```
-
-
-### Wandb installation
-
-
-
-Go over to the link in terminal and paste you API key. That should be it.
