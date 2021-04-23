@@ -21,7 +21,7 @@ class LinearBlock(nn.Module):
 class BERTBasic(nn.Module):
     def __init__(self, freeze_bert_params=True):
       super(BERTBasic, self).__init__()
-      self.embeddings = AutoModel.from_pretrained('bert-base-uncased')#, output_hidden_states = True)
+      self.embeddings = AutoModel.from_pretrained('bert-base-multilingual-cased')#, output_hidden_states = True)
 
       if freeze_bert_params:
       	for param in self.embeddings.parameters():
