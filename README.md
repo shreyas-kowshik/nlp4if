@@ -2,7 +2,9 @@
 
 Code for the paper <b>Multi Output Learning using Task Wise Attention for Predicting BinaryProperties of Tweets</b> on the <a href="https://gitlab.com/NLP4IF/nlp4if-2021">Shared-Task-On-Fighting the COVID-19 Infodemic, NLP4IF workshop</a>, NAACL'21.
 
-This is the code bagging <b>runners-up</b> position on the English subtask of the competition.
+This is the code for team <b>dunder_mifflin</b> bagging <b>runners-up</b> position on the English subtask of the competition.
+
+Authors : <a href="github.com/shreyas-kowshik">Shreyas Kowshik</a>, <a href="github.com/amsuhane">Ayush Suhane</a>.
 
 ### Overview
 
@@ -41,4 +43,4 @@ python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr [wandb_run_name
 
 ### Pretrained Model
 
-Final architecture weights : <a href="https://bit.ly/3tMFwgZ">link</a>.
+Final architecture weights <a href="https://bit.ly/3tMFwgZ">link</a>.
