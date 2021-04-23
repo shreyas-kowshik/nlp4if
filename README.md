@@ -33,6 +33,8 @@ wandb.init(name=args.wandb_run, project='project_name', entity='entity_name')
 
 in the files `bert_train.py` and `roberta_train.py` (line 68 in each file).
 
+We used <a href="https://colab.research.google.com/">Google Colab</a> for all our training. So the `requirements.txt` file corresponds to all the packages installed by default when one runs a new Colab session. Any additional dependencies are installed using the commands below.
+
 ```
 git clone https://github.com/shreyas-kowshik/nlp4if.git
 cd nlp4if
