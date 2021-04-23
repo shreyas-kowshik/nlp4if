@@ -65,7 +65,7 @@ args = parser.parse_args()
 
 # Add initial values here #
 if args.log_to_wnb==True:
-    wandb.init(name=args.wandb_run, project='nlp_runs', entity='nlp4if')
+    wandb.init(name=args.wandb_run, project='', entity='')
     wandb.config.update(args)
 ###########################
 
