@@ -1,8 +1,8 @@
 # NLP4IF
 
-Experiments Code.
+Code for the paper <b>Multi Output Learning using Task Wise Attention for Predicting BinaryProperties of Tweets</b> on the <a href="https://gitlab.com/NLP4IF/nlp4if-2021">Shared-Task-On-Fighting the COVID-19 Infodemic, NLP4IF workshop</a>, NAACL'21.
 
-Link to task : https://gitlab.com/NLP4IF/nlp4if-2021
+This is the code bagging <b>runners-up</b> position on the English subtask of the competition.
 
 
 ### Instructions to train on colab + vscode
@@ -23,7 +23,7 @@ cd nlp4if
 bash setup.sh
 
 [Run this command]
-python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr ensemble_aug_inverse_weights_roberta_small -model roberta_attn_classwise --base roberta-base --save_model True
+bert_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 120 -wdbr [wandb_run_name] -model roberta_attn_classwise --base roberta-base --save_model True -dtp data/english/v3/v3_augmented/covid19_disinfo_binary_english_train.tsv -ddp covid19_disinfo_binary_english_dev_input.tsv
 ```
 
 
@@ -36,11 +36,3 @@ wandb login
 ```
 
 Go over to the link in terminal and paste you API key. That should be it.
-
-### NOTES
-- Orignal Bulgarian and Arabic datasets have column name 'tweet' instead of 'tweet_text'. To maintain uniformity, Arabic and Bulgarian datasets have their column name 'tweet' replaced by 'tweet_text'. These new datasets have the following naming convention: ORIGINAL_NAME+'_mod.tsv'
-
-### To Do
-- For running models with Bulgarian and Arabic datasets, the lines ```TRAIN_FILE=args.data_train_path#+"covid19_disinfo_binary_english_train.tsv"
-DEV_FILE=args.data_dev_path#+"covid19_disinfo_binary_english_dev_input.tsv"```
-need to be replaced with corresponding file paths for Bulgarian and Arabic
