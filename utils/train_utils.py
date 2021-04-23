@@ -226,22 +226,6 @@ def get_model_embeddings(nmodel, dataloader, device):
     print("Embedding Shape : {}".format(embeddings.shape))
     return embeddings
 
-# Define training loop here #
-def train_ml(MODEL, X_train, Y_TRAIN_FULL, X_val, cw):
-    y_pred_train, y_pred_val = [], []
-    for i in range(7):
-        print('Training model for task: ', i+1)
-        Y_train = Y_TRAIN_FULL[:,i].astype('int')
-        clf = MODEL(class_weight={n:j for n, j in enumerate(cw[i])}, random_state=42)
-        clf.fit(X_train, Y_train)
-        y_pred_train.append(clf.predict(X_train))
-        y_pred_val.append(clf.predict(X_val))
-
-    y_pred_train=np.vstack(y_pred_train).T
-    y_pred_val=np.vstack(y_pred_val).T
-
-    return clf, y_pred_train, y_pred_val
-
 def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, loss_type="classwise_sum"):
     bert_params = nmodel.embeddings
     bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
@@ -263,6 +247,11 @@ def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, 
         print("Loss {} Not Defined".format(loss_type))
         sys.exit(1)
 
+    # Load class weights for loss function
+    wts = []
+    for i in range(7):
+        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
+
     best_model = copy.deepcopy(nmodel)
     best_prec = 0
     for epoch_i in tqdm(range(0, epochs)):
@@ -273,7 +262,7 @@ def train(nmodel, training_dataloader, val_dataloader, device, epochs, lr=1e-5, 
             sent_id, mask, labels = batch
             nmodel.zero_grad()
             preds = nmodel(sent_id, mask)
-            loss_val = loss_fn(preds, labels)
+            loss_val = loss_fn(preds, labels, wts, device)
             total_train_loss += loss_val
             optimizer.zero_grad()
             loss_val.backward()
@@ -383,9 +372,7 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
 
             ypreds = nmodel(sent_id, mask)
             if loss_type == "classwise_sum":
-                loss = loss_fn(ypreds, labels, wts)
-            elif loss_type == "single_class":
-                loss = loss_fn(ypreds, labels)
+                loss = loss_fn(ypreds, labels, wts, device)
 
             total_train_loss += loss
             optimizer1.zero_grad()
@@ -401,228 +388,6 @@ def train_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr
         print('#############    Validation Set Stats')
         train_scores = evaluate_model(nmodel, training_dataloader, device)
         scores, val_preds, val_gt = evaluate_model(nmodel, val_dataloader, device, return_files=True)
-        display_metrics(scores)
-
-        # Log scores on wandb
-        wandb.log({
-            # Mean Scores
-            'Training loss': total_train_loss,
-            'Training Mean F1-Score': np.mean(train_scores['f1']),
-            'Training Accuracy': np.mean(train_scores['acc']),
-            'Training Mean Precision': np.mean(train_scores['p_score']),
-            'Training Mean Recall': np.mean(train_scores['r_score']),
-
-            'Validation Mean F1-Score': np.mean(scores['f1']),
-            'Validation Accuracy': np.mean(scores['acc']),
-            'Validation Mean Precision': np.mean(scores['p_score']),
-            'Validation Mean Recall': np.mean(scores['r_score']),
-
-            # Classwise scores
-            # Train Set
-            'Training Q1 F1 Score':train_scores['f1'][0],
-            'Training Q2 F1 Score':train_scores['f1'][1],
-            'Training Q3 F1 Score':train_scores['f1'][2],
-            'Training Q4 F1 Score':train_scores['f1'][3],
-            'Training Q5 F1 Score':train_scores['f1'][4],
-            'Training Q6 F1 Score':train_scores['f1'][5],
-            'Training Q7 F1 Score':train_scores['f1'][6],
-
-            # Validation Set
-            'Validation Q1 F1 Score':scores['f1'][0],
-            'Validation Q2 F1 Score':scores['f1'][1],
-            'Validation Q3 F1 Score':scores['f1'][2],
-            'Validation Q4 F1 Score':scores['f1'][3],
-            'Validation Q5 F1 Score':scores['f1'][4],
-            'Validation Q6 F1 Score':scores['f1'][5],
-            'Validation Q7 F1 Score':scores['f1'][6]
-        }, step=epoch_i)
-
-        if np.mean(scores['f1']) > best_prec:
-            best_model = copy.deepcopy(nmodel)
-            best_prec = np.mean(scores['f1'])
-
-            # Save model to wandb
-            # wandb.save('checkpoints_best_val.pt')
-            # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
-            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
-
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
-            np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
-
-
-    
-    return best_model
-
-
-# train_v2 for single class
-def train_v2_sc(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="single_class"):
-    total_steps = len(training_dataloader) * epochs
-    bert_params = nmodel.embeddings
-    bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
-    model_named_params = [name_ for name_, param_ in nmodel.named_parameters()]
-    other_named_params = [i for i in model_named_params if i not in bert_named_params]
-    params = []
-
-    for name, param in nmodel.named_parameters():
-        if name in other_named_params:
-            params.append(param)
-    
-    optimizer1 = AdamW(bert_params.parameters(), lr=lr2, eps = 1e-8)
-    optimizer2 = AdamW(params, lr=lr1, eps = 1e-8)
-    scheduler1 = get_linear_schedule_with_warmup(optimizer1, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
-    scheduler2 = get_linear_schedule_with_warmup(optimizer2, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
-
-    loss_fn = None
-    if loss_type == "classwise_sum":
-        loss_fn = classwise_sum
-    elif loss_type == "single_class":
-        loss_fn = nn.CrossEntropyLoss()
-    else:
-        print("Loss {} Not Defined".format(loss_type))
-        sys.exit(1)
-
-    # Load class weights for loss function
-    wts = []
-    for i in range(7):
-        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
-
-    best_model = copy.deepcopy(nmodel)
-    best_prec = 0
-    for epoch_i in tqdm(range(0, epochs)):
-        total_train_loss = 0
-        nmodel.train()
-        for step, batch in enumerate(training_dataloader):
-            batch = [r.to(device) for r in batch]
-            sent_id, mask, labels = batch
-
-            ypreds = nmodel(sent_id, mask)
-            if loss_type == "classwise_sum":
-                loss = loss_fn(ypreds, labels, wts)
-            elif loss_type == "single_class":
-                loss = loss_fn(ypreds, labels)
-
-            total_train_loss += loss
-            optimizer1.zero_grad()
-            optimizer2.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(bert_params.parameters(), 1.0)
-            optimizer1.step()
-            optimizer2.step()
-            scheduler1.step()
-            scheduler2.step()
-
-        print('Total Train Loss =', total_train_loss)
-        print('#############    Validation Set Stats')
-        train_scores = evaluate_model_sc(nmodel, training_dataloader, device)
-        val_scores = evaluate_model_sc(nmodel, val_dataloader, device)
-        print(val_scores)
-
-        # Log scores on wandb
-        wandb.log({
-            # Mean Scores
-            'Training loss': total_train_loss,
-            'Training F1-Score': train_scores['f1'],
-            'Training Accuracy': train_scores['acc'],
-            'Training Precision': train_scores['p_score'],
-            'Training Recall': train_scores['r_score'],
-
-            'Validation F1-Score': val_scores['f1'],
-            'Validation Accuracy': val_scores['acc'],
-            'Validation Precision': val_scores['p_score'],
-            'Validation Recall': val_scores['r_score'],
-        }, step=epoch_i)
-
-        if val_scores['f1'] > best_prec:
-            best_model = copy.deepcopy(nmodel)
-            best_prec = val_scores['f1']
-
-            # Save model to wandb
-            # wandb.save('checkpoints_best_val.pt')
-            # nmodel.save(os.path.join(wandb.run.dir, "best_val.pt"))
-            # torch.save(nmodel.state_dict(), os.path.join(wandb.run.dir, "best_val.pth"))
-
-            # np.savetxt(os.path.join(wandb.run.dir, "best_val_preds.tsv"), val_preds, delimiter="\t",fmt='%s')
-            # np.savetxt(os.path.join(wandb.run.dir, "best_val_grount_truth.tsv"), val_gt, delimiter="\t",fmt='%s')
-
-    return best_model
-
-
-# Training method using late incorporation
-def train_inc_v2(nmodel, training_dataloader, val_dataloader, device, epochs = 4, lr1=2e-5, lr2=1e-4, loss_type="classwise_sum"):
-    total_steps = len(training_dataloader) * epochs
-    bert_params = nmodel.embeddings
-    bert_named_params = ['embeddings.'+name_ for name_, param_ in bert_params.named_parameters()]
-    model_named_params = [name_ for name_, param_ in nmodel.named_parameters()]
-    other_named_params = [i for i in model_named_params if i not in bert_named_params]
-    params = []
-
-    for name, param in nmodel.named_parameters():
-        if name in other_named_params:
-            params.append(param)
-    
-    optimizer1 = AdamW(bert_params.parameters(), lr=lr2, eps = 1e-8)
-    optimizer2 = AdamW(params, lr=lr1, eps = 1e-8)
-    scheduler1 = get_linear_schedule_with_warmup(optimizer1, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
-    scheduler2 = get_linear_schedule_with_warmup(optimizer2, 
-                                                num_warmup_steps = 0, # Default value in run_glue.py
-                                                num_training_steps = total_steps)
-
-    loss_fn = None
-    if loss_type == "classwise_sum":
-        loss_fn = classwise_sum
-    else:
-        print("Loss {} Not Defined".format(loss_type))
-        sys.exit(1)
-
-    # Load class weights for loss function
-    wts = []
-    for i in range(7):
-        wts.append(torch.Tensor(np.load('data/class_weights/q' + str(i+1) + '.npy')).to(device))
-
-    print("Weights Used for Training :")
-    print(wts)
-    print("\n\n\n")
-
-    best_model = copy.deepcopy(nmodel)
-    best_prec = 0
-    for epoch_i in tqdm(range(0, epochs)):
-        total_train_loss = 0
-        nmodel.train()
-        for step, batch in enumerate(training_dataloader):
-            batch = [r.to(device) for r in batch]
-            sent_id, mask, inc_feats, labels = batch
-
-            # print(sent_id.shape)
-            # print("\n\n\n")
-            # print(mask.shape)
-
-            ypreds = nmodel(sent_id, mask, inc_feats)
-            loss = loss_fn(ypreds, labels, wts)
-            # if step%50==0:
-            #     loss_val = total_train_loss/(step+1.00)
-            #     print('Loss = '+loss_val)
-            #     # wandb.log({"loss":loss_val})
-
-            total_train_loss += loss
-            optimizer1.zero_grad()
-            optimizer2.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(bert_params.parameters(), 1.0)
-            optimizer1.step()
-            optimizer2.step()
-            scheduler1.step()
-            scheduler2.step()
-
-        print('Total Train Loss =', total_train_loss)
-        print('#############    Validation Set Stats')
-        train_scores = evaluate_model(nmodel, training_dataloader, device, inc_eval=True)
-        scores, val_preds, val_gt = evaluate_model(nmodel, val_dataloader, device, return_files=True, inc_eval=True)
         display_metrics(scores)
 
         # Log scores on wandb

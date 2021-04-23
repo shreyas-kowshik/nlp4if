@@ -36,5 +36,9 @@ git clone https://github.com/shreyas-kowshik/nlp4if.git
 cd nlp4if
 bash setup.sh
 
-python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 120 -wdbr [wandb_run_name] -model roberta_attn_classwise --base roberta-base --save_model True -dtp data/english/v3/v3_augmented/covid19_disinfo_binary_english_train.tsv -ddp data/english/v3/v3/covid19_disinfo_binary_english_dev_input.tsv
+python roberta_train.py -bs 32 -lr 5e-5 -lr_emb 5e-6 -e 60 -wdbr [wandb_run_name] -model roberta_attn_classwise --base roberta-base --save_model True -dtp data/english/v3/v3_augmented/covid19_disinfo_binary_english_train.tsv -ddp data/english/v3/v3/covid19_disinfo_binary_english_dev_input.tsv
 ```
+
+### Pretrained Model
+
+Final architecture weights : <a href="https://bit.ly/3tMFwgZ">link</a>.
